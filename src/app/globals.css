@@ -1,0 +1,79 @@
+@import "tailwindcss";
+
+:root {
+  /* Warm dawn palette: saffron + indigo evoke sunrise on an Ekadashi morning. */
+  --background: #0b0a14;
+  --foreground: #f5f1ea;
+  --muted: #a89f95;
+  --surface: #15131f;
+  --surface-2: #1d1a2b;
+  --border: #2a253a;
+  --accent: #f59e0b;        /* saffron */
+  --accent-foreground: #1a1306;
+  --accent-2: #a855f7;      /* lunar violet */
+  --success: #34d399;
+  --danger: #f87171;
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-muted: var(--muted);
+  --color-surface: var(--surface);
+  --color-surface-2: var(--surface-2);
+  --color-border: var(--border);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-accent-2: var(--accent-2);
+  --color-success: var(--success);
+  --color-danger: var(--danger);
+  --font-sans: var(--font-geist-sans);
+  --font-mono: var(--font-geist-mono);
+}
+
+@media (prefers-color-scheme: light) {
+  :root {
+    --background: #fbf7ef;
+    --foreground: #1a1306;
+    --muted: #6b6052;
+    --surface: #ffffff;
+    --surface-2: #f5eedd;
+    --border: #e6dcc4;
+    --accent: #d97706;
+    --accent-foreground: #ffffff;
+    --accent-2: #7c3aed;
+  }
+}
+
+html,
+body {
+  background: var(--background);
+  color: var(--foreground);
+  font-family: var(--font-sans), -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
+  -webkit-tap-highlight-color: transparent;
+}
+
+/* Subtle radial sky behind the whole app */
+body {
+  background-image:
+    radial-gradient(ellipse 80% 50% at 50% -10%, color-mix(in srgb, var(--accent) 18%, transparent), transparent 60%),
+    radial-gradient(ellipse 60% 60% at 90% 110%, color-mix(in srgb, var(--accent-2) 14%, transparent), transparent 60%);
+  background-attachment: fixed;
+}
+
+/* Inputs / forms: better defaults */
+input,
+textarea,
+select,
+button {
+  font: inherit;
+}
+
+button {
+  cursor: pointer;
+}
+
+::selection {
+  background: color-mix(in srgb, var(--accent) 50%, transparent);
+  color: var(--foreground);
+}
