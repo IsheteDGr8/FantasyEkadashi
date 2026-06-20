@@ -1,12 +1,25 @@
 "use server";
 
 import { z } from "zod";
+import { redirect } from "next/navigation";
+import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { adminPhoneAllowlist } from "@/lib/auth";
 import { normalizePhone, phoneToSyntheticEmail } from "@/lib/utils";
 
 export type AuthResult = { error: string } | { ok: true };
+
+/**
+ * Sign out on the server so the httpOnly Supabase session cookies are actually
+ * cleared (a client-side signOut can't delete server-set cookies reliably).
+ */
+export async function signOutAction() {
+  const supabase = await createClient();
+  await supabase.auth.signOut();
+  revalidatePath("/", "layout");
+  redirect("/");
+}
 
 const SignUpSchema = z.object({
   displayName: z.string().trim().min(2, "Name must be at least 2 characters").max(40),
