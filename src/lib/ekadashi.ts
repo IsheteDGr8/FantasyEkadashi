@@ -174,3 +174,30 @@ export function getSubmissionWindow(
 export function parseEkadashiDate(dateStr: string): Date {
   return new Date(dateStr + "T00:00:00Z");
 }
+
+/**
+ * When matchups for an Ekadashi are generated: midnight (00:00) the day before
+ * the Ekadashi, in the group's timezone. (Ekadashi June 25 -> June 24 00:00.)
+ */
+export function getMatchupGenerationTime(
+  ekadashiDate: Date,
+  timeZone = DEFAULT_TIMEZONE,
+): Date {
+  const dayStart = startOfDayInTz(ekadashiDate, timeZone);
+  return new Date(dayStart.getTime() - 24 * 60 * 60 * 1000);
+}
+
+/**
+ * Latest moment a player can join and still be matched for an Ekadashi: one
+ * hour before matchups are generated (23:00 two days before). The hour between
+ * the cutoff and generation is intentional downtime.
+ * (Ekadashi June 25 -> cutoff June 23 23:00.)
+ */
+export function getJoinCutoff(
+  ekadashiDate: Date,
+  timeZone = DEFAULT_TIMEZONE,
+): Date {
+  return new Date(
+    getMatchupGenerationTime(ekadashiDate, timeZone).getTime() - 60 * 60 * 1000,
+  );
+}

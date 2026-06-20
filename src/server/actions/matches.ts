@@ -5,8 +5,6 @@ import { redirect } from "next/navigation";
 import { z } from "zod";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
-import { buildPairings } from "@/server/lib/bracket";
-import { getNextEkadashi } from "@/lib/ekadashi";
 import type { MatchStatus, SubmissionSource } from "@/lib/supabase/types";
 
 export type ActionResult = { error: string } | { ok: true };
@@ -202,77 +200,10 @@ async function tryResolveMatch(matchId: string) {
 
 async function finalizeMatch(matchId: string, winnerId: string) {
   const admin = createAdminClient();
-  const { data: match } = await admin.from("matches").select("*").eq("id", matchId).single();
-  if (!match) return;
-
+  // Ongoing league: just record the winner. Nobody is eliminated, and the next
+  // Ekadashi's matchups are created on a schedule (see server/lib/matchmaking).
   await admin
     .from("matches")
     .update({ winner_id: winnerId, status: "completed" as MatchStatus })
     .eq("id", matchId);
-
-  const loser = winnerId === match.player_a ? match.player_b : match.player_a;
-  if (loser) {
-    await admin
-      .from("group_members")
-      .update({ eliminated_at: new Date().toISOString() })
-      .eq("group_id", match.group_id)
-      .eq("user_id", loser);
-  }
-  await maybeAdvanceRound(match.group_id);
-}
-
-async function maybeAdvanceRound(groupId: string) {
-  const admin = createAdminClient();
-  const { data: group } = await admin
-    .from("groups")
-    .select("id, current_round, timezone, status")
-    .eq("id", groupId)
-    .single();
-  if (!group || group.status !== "active") return;
-
-  const { data: roundMatches } = await admin
-    .from("matches")
-    .select("id, winner_id, status")
-    .eq("group_id", groupId)
-    .eq("round", group.current_round);
-  if (!roundMatches || roundMatches.length === 0) return;
-  if (roundMatches.some((m) => m.status !== "completed")) return;
-
-  const winners = roundMatches
-    .map((m) => m.winner_id)
-    .filter((w): w is string => !!w);
-
-  if (winners.length <= 1) {
-    await admin.from("groups").update({ status: "completed" }).eq("id", groupId);
-    return;
-  }
-
-  const { matches, byes } = buildPairings(winners);
-  const nextRound = group.current_round + 1;
-  const ekDate = getNextEkadashi(new Date(), group.timezone, false).date
-    .toISOString()
-    .slice(0, 10);
-
-  const matchRows = matches.map(([a, b]) => ({
-    group_id: groupId,
-    round: nextRound,
-    ekadashi_date: ekDate,
-    player_a: a,
-    player_b: b,
-    status: "scheduled" as MatchStatus,
-  }));
-  const byeRows = byes.map((a) => ({
-    group_id: groupId,
-    round: nextRound,
-    ekadashi_date: ekDate,
-    player_a: a,
-    player_b: null,
-    winner_id: a,
-    status: "completed" as MatchStatus,
-  }));
-  await admin.from("matches").insert([...matchRows, ...byeRows]);
-  await admin.from("groups").update({ current_round: nextRound }).eq("id", groupId);
-
-  // A bye in the new round may immediately leave a single survivor; re-check.
-  if (matchRows.length === 0) await maybeAdvanceRound(groupId);
 }

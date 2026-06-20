@@ -1,10 +1,11 @@
 import Link from "next/link";
-import { cn } from "@/lib/utils";
+import { cn, formatDate } from "@/lib/utils";
 import type { MatchStatus } from "@/lib/supabase/types";
 
 export interface MatchView {
   id: string;
   round: number;
+  ekadashiDate: string;
   status: MatchStatus;
   winnerId: string | null;
   playerA: { id: string; name: string } | null;
@@ -14,27 +15,27 @@ export interface MatchView {
 export function Bracket({
   matches,
   currentUserId,
+  timeZone = "Asia/Kolkata",
 }: {
   matches: MatchView[];
   currentUserId: string;
+  timeZone?: string;
 }) {
+  // One column per Ekadashi, most recent on the right.
   const rounds = Array.from(new Set(matches.map((m) => m.round))).sort((a, b) => a - b);
-  const maxRound = rounds[rounds.length - 1] ?? 1;
 
   return (
     <div className="overflow-x-auto -mx-4 sm:mx-0 px-4 sm:px-0">
       <div className="flex gap-4 min-w-max">
         {rounds.map((r) => {
           const roundMatches = matches.filter((m) => m.round === r);
-          const isFinal = r === maxRound && roundMatches.length === 1;
+          const ekDate = roundMatches[0]?.ekadashiDate;
           return (
             <div key={r} className="flex flex-col gap-3 min-w-[220px]">
               <h3 className="text-xs uppercase tracking-wider text-muted px-1">
-                {isFinal ? "Final"
-                  : r === maxRound - 1 && roundMatches.length === 2 ? "Semifinals"
-                  : `Round ${r}`}
+                {ekDate ? formatDate(new Date(ekDate + "T00:00:00"), timeZone) : `Round ${r}`}
               </h3>
-              <div className="flex flex-col gap-3 justify-around h-full">
+              <div className="flex flex-col gap-3">
                 {roundMatches.map((m) => (
                   <MatchCard key={m.id} match={m} currentUserId={currentUserId} />
                 ))}

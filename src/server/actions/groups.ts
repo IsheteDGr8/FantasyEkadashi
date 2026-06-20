@@ -6,8 +6,8 @@ import { z } from "zod";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { generateJoinCode } from "@/lib/utils";
-import { getNextEkadashi, DEFAULT_TIMEZONE } from "@/lib/ekadashi";
-import { buildPairings } from "@/server/lib/bracket";
+import { DEFAULT_TIMEZONE } from "@/lib/ekadashi";
+import { generateMatchupsForGroup } from "@/server/lib/matchmaking";
 
 export type ActionResult = { error: string } | { ok: true };
 
@@ -84,8 +84,8 @@ export async function joinGroup(formData: FormData): Promise<ActionResult> {
     .eq("join_code", parsed.data.code)
     .maybeSingle();
   if (!group) return { error: "No group with that code." };
-  if (group.status !== "open") {
-    return { error: "That group has already started; you can't join mid-tournament." };
+  if (group.status === "completed") {
+    return { error: "That league has ended." };
   }
 
   const { error } = await admin
@@ -145,19 +145,24 @@ export async function removeMember(
   return { ok: true };
 }
 
-/** Admin locks the roster and generates round 1 on the next Ekadashi. */
+/**
+ * Admin opens the league. Matchups for each Ekadashi are then generated on a
+ * schedule (~1 day before), so everyone who joins before the cutoff is included.
+ * If we're already past the next Ekadashi's generation time, matchups are
+ * created right away.
+ */
 export async function startTournament(groupId: string): Promise<ActionResult> {
   const user = await requireUser();
   const admin = createAdminClient();
 
   const { data: group } = await admin
     .from("groups")
-    .select("id, status, admin_id, timezone")
+    .select("id, status, admin_id")
     .eq("id", groupId)
     .single();
   if (!group) return { error: "Group not found." };
-  if (group.admin_id !== user.id) return { error: "Only the admin can start the tournament." };
-  if (group.status !== "open") return { error: "This group has already started." };
+  if (group.admin_id !== user.id) return { error: "Only the admin can start the league." };
+  if (group.status !== "open") return { error: "This league has already started." };
 
   const { data: members } = await admin
     .from("group_members")
@@ -165,40 +170,35 @@ export async function startTournament(groupId: string): Promise<ActionResult> {
     .eq("group_id", groupId);
   if (!members || members.length < 2) return { error: "Need at least 2 players to start." };
 
-  const { matches, byes } = buildPairings(members.map((m) => m.user_id));
-  const ekDate = getNextEkadashi(new Date(), group.timezone).date
-    .toISOString()
-    .slice(0, 10);
-
-  const matchRows = matches.map(([a, b]) => ({
-    group_id: groupId,
-    round: 1,
-    ekadashi_date: ekDate,
-    player_a: a,
-    player_b: b,
-    status: "scheduled" as const,
-  }));
-  const byeRows = byes.map((a) => ({
-    group_id: groupId,
-    round: 1,
-    ekadashi_date: ekDate,
-    player_a: a,
-    player_b: null,
-    winner_id: a,
-    status: "completed" as const,
-  }));
-
-  const { error: insertErr } = await admin
-    .from("matches")
-    .insert([...matchRows, ...byeRows]);
-  if (insertErr) return { error: insertErr.message };
-
   await admin
     .from("groups")
-    .update({ status: "active", current_round: 1 })
+    .update({ status: "active", current_round: 0 })
     .eq("id", groupId);
+
+  // Generate immediately if we're already within the matchup window.
+  await generateMatchupsForGroup(groupId);
 
   revalidatePath(`/groups/${groupId}`);
   revalidatePath("/dashboard");
   return { ok: true };
+}
+
+/** Admin permanently deletes a league (any status). Cascades to all data. */
+export async function deleteGroup(groupId: string): Promise<ActionResult> {
+  const user = await requireUser();
+  const admin = createAdminClient();
+
+  const { data: group } = await admin
+    .from("groups")
+    .select("admin_id")
+    .eq("id", groupId)
+    .single();
+  if (!group) return { error: "League not found." };
+  if (group.admin_id !== user.id) return { error: "Only the admin can delete this league." };
+
+  const { error } = await admin.from("groups").delete().eq("id", groupId);
+  if (error) return { error: error.message };
+
+  revalidatePath("/dashboard");
+  redirect("/dashboard");
 }

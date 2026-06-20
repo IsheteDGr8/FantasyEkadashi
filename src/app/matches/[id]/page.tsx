@@ -32,22 +32,22 @@ export default async function MatchPage({ params }: PageProps) {
   const { data: match, error } = await supabase.from("matches").select("*").eq("id", id).single();
   if (error || !match) notFound();
 
-  const { data: group } = await supabase
-    .from("groups")
-    .select("id, name, timezone, admin_id")
-    .eq("id", match.group_id)
-    .single();
+  const playerIds = [match.player_a, match.player_b].filter(Boolean) as string[];
+  const [{ data: group }, { data: players }, { data: subs }] = await Promise.all([
+    supabase
+      .from("groups")
+      .select("id, name, timezone, admin_id")
+      .eq("id", match.group_id)
+      .single(),
+    playerIds.length
+      ? admin.from("profiles").select("id, display_name").in("id", playerIds)
+      : Promise.resolve({ data: [] as { id: string; display_name: string }[] }),
+    supabase.from("submissions").select("*").eq("match_id", match.id),
+  ]);
   if (!group) notFound();
 
-  const playerIds = [match.player_a, match.player_b].filter(Boolean) as string[];
-  const { data: players } = await admin
-    .from("profiles")
-    .select("id, display_name")
-    .in("id", playerIds);
   const nameOf = (uid: string | null) =>
     uid ? players?.find((p) => p.id === uid)?.display_name ?? "Player" : "—";
-
-  const { data: subs } = await supabase.from("submissions").select("*").eq("match_id", match.id);
   const subOf = (uid: string | null): Submission | null =>
     uid ? subs?.find((s) => s.player_id === uid) ?? null : null;
 

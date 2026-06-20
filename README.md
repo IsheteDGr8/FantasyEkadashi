@@ -8,19 +8,24 @@ screen time** on each Ekadashi advances. Built to cost **$0** to run.
 
 ## How it works
 
-- An **admin** creates a **group** (league) and shares a 6-character join code.
+- An **admin** creates a **league** and shares a 6-character join code.
 - Players join with their **name + phone number** and set a password.
   (Name is public; phone is private and used only to log in — **no SMS is sent**.)
-- The admin **starts the tournament**: players are randomly paired. An odd
-  player gets a **bye** that round (no win/loss).
+- The admin **starts the league**. It then runs as an **ongoing league**: on
+  every Ekadashi, eligible players are randomly paired (odd player gets a bye).
+- **Matchups are generated ~1 day before each Ekadashi** (00:00 the day before).
+  Players who joined on/before the **cutoff** (23:00 two days before) are paired
+  for that Ekadashi; anyone who joins later gets a bye and competes next time.
+  This runs on a schedule (cron + lazy generation on page load).
 - On each **Ekadashi**, paired players submit their screen time across four
   categories: **Social, Games, Entertainment, Creativity**. WhatsApp (which iOS
   files under Social) can be entered separately and is **subtracted**. Messages
   and FaceTime aren't in any competed category, so they never count.
-- **Lowest total wins** the head-to-head and advances. Last player standing
-  wins the group.
+- **Lowest total wins** the head-to-head. Nobody is eliminated — losers are just
+  marked on that Ekadashi's leaderboard, and everyone keeps playing.
 - Each Ekadashi has a **leaderboard** (lowest time on top, losers marked), plus
-  an **all-time standings** table.
+  **all-time standings** (W–L record, byes, average time).
+- The admin can **delete** a league at any time.
 
 ### Screen time verification
 
@@ -86,13 +91,21 @@ Open <http://localhost:3000>. Visit `/api/health` to confirm the DB is reachable
 2. Add the same env vars in Vercel project settings.
 3. Deploy.
 
-### Keep the database awake
+### Keep-alive + scheduled matchmaking
 
-Supabase's free tier pauses a project after ~7 days of inactivity, but Ekadashi
-is only ~twice a month. The included GitHub Action
-([`.github/workflows/keepalive.yml`](.github/workflows/keepalive.yml)) pings
-`/api/health` daily. Set a repository **variable** `APP_URL` to your deployed
-URL (e.g. `https://your-app.vercel.app`).
+The included GitHub Action
+([`.github/workflows/keepalive.yml`](.github/workflows/keepalive.yml)) runs
+daily and does two things:
+
+1. Pings `/api/health` so Supabase's free tier doesn't pause the project
+   (it sleeps after ~7 days idle; Ekadashi is only ~twice a month).
+2. Pings `/api/cron/matchmaking` so each Ekadashi's pairings are generated
+   ~1 day before, even if nobody opens the site.
+
+Set a repository **variable** `APP_URL` to your deployed URL (e.g.
+`https://your-app.vercel.app`). Optionally set a `CRON_SECRET` env var on the
+host **and** a matching `CRON_SECRET` repository **secret** to lock down the
+matchmaking endpoint.
 
 ## Project structure
 

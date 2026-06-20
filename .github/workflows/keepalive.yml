@@ -1,9 +1,13 @@
-name: Supabase keep-alive
+name: Keep-alive & matchmaking
 
-# Supabase's free tier pauses a project after ~7 days of inactivity, and
-# Ekadashi is only ~twice a month. This pings the deployed health endpoint
-# daily so the database stays awake. Set the APP_URL repo variable to your
-# deployed URL (e.g. https://your-app.vercel.app).
+# Two jobs in one daily cron:
+#  1. Ping /api/health so Supabase's free tier doesn't pause between Ekadashis
+#     (it pauses after ~7 days idle; Ekadashi is only ~twice a month).
+#  2. Ping /api/cron/matchmaking so each Ekadashi's pairings get generated
+#     ~1 day before, even if nobody opens the site.
+# Set the APP_URL repository variable to your deployed URL
+# (e.g. https://your-app.vercel.app). If you set a CRON_SECRET env var on the
+# host, also add a CRON_SECRET repository secret here.
 
 on:
   schedule:
@@ -27,3 +31,14 @@ jobs:
           echo ""
           echo "HTTP $code"
           if [ "$code" != "200" ]; then exit 1; fi
+
+      - name: Trigger matchmaking
+        run: |
+          URL="${{ vars.APP_URL }}"
+          if [ -z "$URL" ]; then exit 0; fi
+          KEY="${{ secrets.CRON_SECRET }}"
+          echo "Pinging $URL/api/cron/matchmaking"
+          code=$(curl -s -o /tmp/mm.json -w "%{http_code}" "$URL/api/cron/matchmaking?key=$KEY") || true
+          cat /tmp/mm.json || true
+          echo ""
+          echo "HTTP $code"

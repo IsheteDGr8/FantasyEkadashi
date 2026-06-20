@@ -20,10 +20,15 @@ export default async function DashboardPage() {
   const supabase = await createClient();
   const admin = createAdminClient();
 
-  const { data: memberships } = await supabase
-    .from("group_members")
-    .select("group_id")
-    .eq("user_id", profile.id);
+  const [{ data: memberships }, { data: matches }] = await Promise.all([
+    supabase.from("group_members").select("group_id").eq("user_id", profile.id),
+    supabase
+      .from("matches")
+      .select("id, group_id, round, ekadashi_date, status, player_a, player_b")
+      .or(`player_a.eq.${profile.id},player_b.eq.${profile.id}`)
+      .in("status", ["scheduled", "awaiting_submissions", "pending_review"])
+      .order("ekadashi_date", { ascending: true }),
+  ]);
   const groupIds = memberships?.map((m) => m.group_id) ?? [];
 
   const { data: groups } = groupIds.length
@@ -33,13 +38,6 @@ export default async function DashboardPage() {
         .in("id", groupIds)
         .order("created_at", { ascending: false })
     : { data: [] };
-
-  const { data: matches } = await supabase
-    .from("matches")
-    .select("id, group_id, round, ekadashi_date, status, player_a, player_b")
-    .or(`player_a.eq.${profile.id},player_b.eq.${profile.id}`)
-    .in("status", ["scheduled", "awaiting_submissions", "pending_review"])
-    .order("ekadashi_date", { ascending: true });
 
   const groupNameById = new Map((groups ?? []).map((g) => [g.id, g.name]));
   const tz = "Asia/Kolkata";
