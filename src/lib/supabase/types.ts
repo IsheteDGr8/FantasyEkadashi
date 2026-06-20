@@ -1,35 +1,34 @@
-// Hand-maintained mirror of supabase/schema.sql. Regenerate via
-// `supabase gen types typescript` if you wire up the Supabase CLI later.
+// Hand-maintained mirror of supabase/schema.sql.
 
-export type LeagueStatus = "open" | "active" | "completed";
+export type GroupStatus = "open" | "active" | "completed";
 export type MatchStatus =
   | "scheduled"
   | "awaiting_submissions"
   | "pending_review"
-  | "completed"
-  | "walkover";
+  | "completed";
 export type SubmissionSource = "ocr" | "manual" | "mixed";
 
 export type Profile = {
   id: string;
   display_name: string;
-  timezone: string;
+  phone: string | null;
+  is_admin: boolean;
   created_at: string;
 };
 
-export type League = {
+export type Group = {
   id: string;
   name: string;
-  invite_code: string;
-  created_by: string;
+  join_code: string;
+  admin_id: string;
   timezone: string;
-  status: LeagueStatus;
+  status: GroupStatus;
   current_round: number;
   created_at: string;
 };
 
-export type LeagueMember = {
-  league_id: string;
+export type GroupMember = {
+  group_id: string;
   user_id: string;
   seed: number | null;
   eliminated_at: string | null;
@@ -38,9 +37,9 @@ export type LeagueMember = {
 
 export type Match = {
   id: string;
-  league_id: string;
+  group_id: string;
   round: number;
-  ekadashi_date: string; // ISO date (YYYY-MM-DD)
+  ekadashi_date: string;
   player_a: string | null;
   player_b: string | null;
   winner_id: string | null;
@@ -52,7 +51,12 @@ export type Submission = {
   id: string;
   match_id: string;
   player_id: string;
-  screen_time_minutes: number;
+  social_min: number;
+  games_min: number;
+  entertainment_min: number;
+  creativity_min: number;
+  whatsapp_min: number;
+  total_min: number;
   screenshot_path: string | null;
   source: SubmissionSource;
   disputed: boolean;
@@ -60,13 +64,7 @@ export type Submission = {
   submitted_at: string;
 };
 
-export type Json =
-  | string
-  | number
-  | boolean
-  | null
-  | { [key: string]: Json | undefined }
-  | Json[];
+type WritableSubmission = Omit<Submission, "id" | "total_min" | "submitted_at">;
 
 export type Database = {
   public: {
@@ -77,20 +75,19 @@ export type Database = {
         Update: Partial<Profile>;
         Relationships: [];
       };
-      leagues: {
-        Row: League;
-        Insert: Omit<League, "id" | "created_at" | "status" | "current_round"> & {
-          status?: LeagueStatus;
+      groups: {
+        Row: Group;
+        Insert: Omit<Group, "id" | "created_at" | "status" | "current_round"> & {
+          status?: GroupStatus;
           current_round?: number;
         };
-        Update: Partial<League>;
+        Update: Partial<Group>;
         Relationships: [];
       };
-      league_members: {
-        Row: LeagueMember;
-        Insert: Pick<LeagueMember, "league_id" | "user_id"> &
-          Partial<LeagueMember>;
-        Update: Partial<LeagueMember>;
+      group_members: {
+        Row: GroupMember;
+        Insert: Pick<GroupMember, "group_id" | "user_id"> & Partial<GroupMember>;
+        Update: Partial<GroupMember>;
         Relationships: [];
       };
       matches: {
@@ -104,27 +101,21 @@ export type Database = {
       };
       submissions: {
         Row: Submission;
-        Insert: Omit<
-          Submission,
-          "id" | "submitted_at" | "disputed" | "dispute_note" | "screenshot_path"
-        > & {
-          disputed?: boolean;
-          dispute_note?: string | null;
-          screenshot_path?: string | null;
-        };
-        Update: Partial<Submission>;
+        Insert: Partial<WritableSubmission> &
+          Pick<WritableSubmission, "match_id" | "player_id">;
+        Update: Partial<WritableSubmission>;
         Relationships: [];
       };
     };
     Views: { [_ in never]: never };
     Functions: {
-      is_league_member: {
-        Args: { target_league: string };
+      is_group_member: {
+        Args: { target_group: string };
         Returns: boolean;
       };
     };
     Enums: {
-      league_status: LeagueStatus;
+      group_status: GroupStatus;
       match_status: MatchStatus;
       submission_source: SubmissionSource;
     };

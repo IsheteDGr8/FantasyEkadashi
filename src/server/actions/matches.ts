@@ -5,64 +5,79 @@ import { redirect } from "next/navigation";
 import { z } from "zod";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
-import { buildNextRound } from "@/server/lib/bracket";
+import { buildPairings } from "@/server/lib/bracket";
 import { getNextEkadashi } from "@/lib/ekadashi";
 import type { MatchStatus, SubmissionSource } from "@/lib/supabase/types";
 
+export type ActionResult = { error: string } | { ok: true };
+
+async function requireUserId() {
+  const supabase = await createClient();
+  const { data } = await supabase.auth.getUser();
+  if (!data.user) redirect("/sign-in");
+  return data.user.id;
+}
+
+const minute = z.coerce.number().int().min(0).max(1440);
+
 const SubmitSchema = z.object({
   matchId: z.string().uuid(),
-  screenTimeMinutes: z.coerce.number().int().min(0).max(24 * 60),
+  social_min: minute,
+  games_min: minute,
+  entertainment_min: minute,
+  creativity_min: minute,
+  whatsapp_min: minute,
   screenshotPath: z.string().nullable().optional(),
   source: z.enum(["ocr", "manual", "mixed"]).default("manual"),
 });
 
-export async function submitScreenTime(formData: FormData) {
-  const parsed = SubmitSchema.parse({
+export async function submitScreenTime(formData: FormData): Promise<ActionResult> {
+  const userId = await requireUserId();
+  const parsed = SubmitSchema.safeParse({
     matchId: formData.get("matchId"),
-    screenTimeMinutes: formData.get("screenTimeMinutes"),
+    social_min: formData.get("social_min"),
+    games_min: formData.get("games_min"),
+    entertainment_min: formData.get("entertainment_min"),
+    creativity_min: formData.get("creativity_min"),
+    whatsapp_min: formData.get("whatsapp_min"),
     screenshotPath: formData.get("screenshotPath") || null,
     source: formData.get("source") || "manual",
   });
-
-  const supabase = await createClient();
-  const { data: userData } = await supabase.auth.getUser();
-  if (!userData.user) redirect("/sign-in");
-  const userId = userData.user.id;
+  if (!parsed.success) return { error: "Please enter valid times (0–1440 minutes)." };
 
   const admin = createAdminClient();
-
-  const { data: match, error: matchErr } = await admin
+  const { data: match } = await admin
     .from("matches")
     .select("*")
-    .eq("id", parsed.matchId)
+    .eq("id", parsed.data.matchId)
     .single();
-  if (matchErr || !match) throw new Error("Match not found.");
+  if (!match) return { error: "Match not found." };
   if (match.player_a !== userId && match.player_b !== userId) {
-    throw new Error("You're not a player in this match.");
+    return { error: "You're not a player in this match." };
   }
-  if (match.status === "completed" || match.status === "walkover") {
-    throw new Error("This match is already decided.");
-  }
+  if (match.status === "completed") return { error: "This match is already decided." };
 
-  // Upsert the player's submission.
   const { error: upsertErr } = await admin.from("submissions").upsert(
     {
-      match_id: parsed.matchId,
+      match_id: parsed.data.matchId,
       player_id: userId,
-      screen_time_minutes: parsed.screenTimeMinutes,
-      screenshot_path: parsed.screenshotPath ?? null,
-      source: parsed.source as SubmissionSource,
+      social_min: parsed.data.social_min,
+      games_min: parsed.data.games_min,
+      entertainment_min: parsed.data.entertainment_min,
+      creativity_min: parsed.data.creativity_min,
+      whatsapp_min: parsed.data.whatsapp_min,
+      screenshot_path: parsed.data.screenshotPath ?? null,
+      source: parsed.data.source as SubmissionSource,
     },
     { onConflict: "match_id,player_id" },
   );
-  if (upsertErr) throw new Error(upsertErr.message);
+  if (upsertErr) return { error: upsertErr.message };
 
-  // If both players have now submitted, decide the match (unless disputed).
-  await tryResolveMatch(parsed.matchId);
-
-  revalidatePath(`/matches/${parsed.matchId}`);
-  revalidatePath(`/leagues/${match.league_id}`);
+  await tryResolveMatch(parsed.data.matchId);
+  revalidatePath(`/matches/${parsed.data.matchId}`);
+  revalidatePath(`/groups/${match.group_id}`);
   revalidatePath("/dashboard");
+  return { ok: true };
 }
 
 const DisputeSchema = z.object({
@@ -70,123 +85,101 @@ const DisputeSchema = z.object({
   note: z.string().trim().max(500).optional(),
 });
 
-export async function disputeOpponentSubmission(formData: FormData) {
-  const parsed = DisputeSchema.parse({
+export async function disputeOpponent(formData: FormData): Promise<ActionResult> {
+  const userId = await requireUserId();
+  const parsed = DisputeSchema.safeParse({
     matchId: formData.get("matchId"),
     note: formData.get("note") || undefined,
   });
-
-  const supabase = await createClient();
-  const { data: userData } = await supabase.auth.getUser();
-  if (!userData.user) redirect("/sign-in");
-  const userId = userData.user.id;
+  if (!parsed.success) return { error: "Invalid dispute." };
 
   const admin = createAdminClient();
   const { data: match } = await admin
     .from("matches")
-    .select("league_id, player_a, player_b")
-    .eq("id", parsed.matchId)
+    .select("group_id, player_a, player_b")
+    .eq("id", parsed.data.matchId)
     .single();
-  if (!match) throw new Error("Match not found.");
+  if (!match) return { error: "Match not found." };
   if (match.player_a !== userId && match.player_b !== userId) {
-    throw new Error("You're not in this match.");
+    return { error: "You're not in this match." };
   }
-  const opponentId =
-    match.player_a === userId ? match.player_b : match.player_a;
-  if (!opponentId) throw new Error("No opponent to dispute.");
+  const opponentId = match.player_a === userId ? match.player_b : match.player_a;
+  if (!opponentId) return { error: "No opponent to dispute." };
 
-  // Mark opponent's submission as disputed.
   await admin
     .from("submissions")
-    .update({ disputed: true, dispute_note: parsed.note ?? null })
-    .eq("match_id", parsed.matchId)
+    .update({ disputed: true, dispute_note: parsed.data.note ?? null })
+    .eq("match_id", parsed.data.matchId)
     .eq("player_id", opponentId);
-
   await admin
     .from("matches")
     .update({ status: "pending_review" as MatchStatus })
-    .eq("id", parsed.matchId);
+    .eq("id", parsed.data.matchId);
 
-  revalidatePath(`/matches/${parsed.matchId}`);
-  revalidatePath(`/leagues/${match.league_id}`);
+  revalidatePath(`/matches/${parsed.data.matchId}`);
+  revalidatePath(`/groups/${match.group_id}`);
+  return { ok: true };
 }
 
-/**
- * League creator can override a disputed match by declaring a winner.
- */
 const ResolveSchema = z.object({
   matchId: z.string().uuid(),
   winnerId: z.string().uuid(),
 });
 
-export async function creatorResolveDispute(formData: FormData) {
-  const parsed = ResolveSchema.parse({
+/** Group admin declares the winner of a disputed/tied match. */
+export async function adminResolveMatch(formData: FormData): Promise<ActionResult> {
+  const userId = await requireUserId();
+  const parsed = ResolveSchema.safeParse({
     matchId: formData.get("matchId"),
     winnerId: formData.get("winnerId"),
   });
-
-  const supabase = await createClient();
-  const { data: userData } = await supabase.auth.getUser();
-  if (!userData.user) redirect("/sign-in");
+  if (!parsed.success) return { error: "Invalid resolution." };
 
   const admin = createAdminClient();
   const { data: match } = await admin
     .from("matches")
-    .select("league_id, player_a, player_b")
-    .eq("id", parsed.matchId)
+    .select("group_id, player_a, player_b")
+    .eq("id", parsed.data.matchId)
     .single();
-  if (!match) throw new Error("Match not found.");
-  const { data: league } = await admin
-    .from("leagues")
-    .select("created_by")
-    .eq("id", match.league_id)
+  if (!match) return { error: "Match not found." };
+
+  const { data: group } = await admin
+    .from("groups")
+    .select("admin_id")
+    .eq("id", match.group_id)
     .single();
-  if (!league || league.created_by !== userData.user.id) {
-    throw new Error("Only the league creator can resolve disputes.");
+  if (!group || group.admin_id !== userId) {
+    return { error: "Only the group admin can resolve matches." };
   }
-  if (parsed.winnerId !== match.player_a && parsed.winnerId !== match.player_b) {
-    throw new Error("Winner must be one of the two players.");
+  if (parsed.data.winnerId !== match.player_a && parsed.data.winnerId !== match.player_b) {
+    return { error: "Winner must be one of the two players." };
   }
 
-  await admin
-    .from("matches")
-    .update({ winner_id: parsed.winnerId, status: "completed" as MatchStatus })
-    .eq("id", parsed.matchId);
-
-  await maybeAdvanceRound(match.league_id);
-  revalidatePath(`/leagues/${match.league_id}`);
-  revalidatePath(`/matches/${parsed.matchId}`);
+  await finalizeMatch(parsed.data.matchId, parsed.data.winnerId);
+  revalidatePath(`/matches/${parsed.data.matchId}`);
+  revalidatePath(`/groups/${match.group_id}`);
+  return { ok: true };
 }
 
-/**
- * Try to auto-resolve a match after a new submission. Picks the lower time.
- * If the opponent disputed, leaves it pending_review for human action.
- */
+// --- internal helpers -------------------------------------------------------
+
 async function tryResolveMatch(matchId: string) {
   const admin = createAdminClient();
-  const { data: match } = await admin
-    .from("matches")
-    .select("*")
-    .eq("id", matchId)
-    .single();
-  if (!match) return;
-  if (match.status === "completed" || match.status === "walkover") return;
+  const { data: match } = await admin.from("matches").select("*").eq("id", matchId).single();
+  if (!match || match.status === "completed") return;
   if (!match.player_a || !match.player_b) return; // bye
 
   const { data: subs } = await admin
     .from("submissions")
-    .select("player_id, screen_time_minutes, disputed")
+    .select("player_id, total_min, disputed")
     .eq("match_id", matchId);
   if (!subs || subs.length < 2) {
-    // Only one submission so far — flip status to awaiting_submissions to
-    // signal the other player to submit.
     await admin
       .from("matches")
       .update({ status: "awaiting_submissions" as MatchStatus })
       .eq("id", matchId);
     return;
   }
-
   if (subs.some((s) => s.disputed)) {
     await admin
       .from("matches")
@@ -196,90 +189,90 @@ async function tryResolveMatch(matchId: string) {
   }
 
   const [s1, s2] = subs;
-  let winner: string;
-  if (s1.screen_time_minutes < s2.screen_time_minutes) winner = s1.player_id;
-  else if (s2.screen_time_minutes < s1.screen_time_minutes) winner = s2.player_id;
-  else {
-    // Tie — flag for review.
+  if (s1.total_min === s2.total_min) {
     await admin
       .from("matches")
       .update({ status: "pending_review" as MatchStatus })
       .eq("id", matchId);
     return;
   }
+  const winner = s1.total_min < s2.total_min ? s1.player_id : s2.player_id;
+  await finalizeMatch(matchId, winner);
+}
+
+async function finalizeMatch(matchId: string, winnerId: string) {
+  const admin = createAdminClient();
+  const { data: match } = await admin.from("matches").select("*").eq("id", matchId).single();
+  if (!match) return;
 
   await admin
     .from("matches")
-    .update({ winner_id: winner, status: "completed" as MatchStatus })
+    .update({ winner_id: winnerId, status: "completed" as MatchStatus })
     .eq("id", matchId);
 
-  // Mark loser as eliminated.
-  const loser = winner === match.player_a ? match.player_b : match.player_a;
+  const loser = winnerId === match.player_a ? match.player_b : match.player_a;
   if (loser) {
     await admin
-      .from("league_members")
+      .from("group_members")
       .update({ eliminated_at: new Date().toISOString() })
-      .eq("league_id", match.league_id)
+      .eq("group_id", match.group_id)
       .eq("user_id", loser);
   }
-
-  await maybeAdvanceRound(match.league_id);
+  await maybeAdvanceRound(match.group_id);
 }
 
-/**
- * If every match in the current round is completed, generate the next round.
- */
-async function maybeAdvanceRound(leagueId: string) {
+async function maybeAdvanceRound(groupId: string) {
   const admin = createAdminClient();
-  const { data: league } = await admin
-    .from("leagues")
+  const { data: group } = await admin
+    .from("groups")
     .select("id, current_round, timezone, status")
-    .eq("id", leagueId)
+    .eq("id", groupId)
     .single();
-  if (!league) return;
-  if (league.status !== "active") return;
+  if (!group || group.status !== "active") return;
 
   const { data: roundMatches } = await admin
     .from("matches")
     .select("id, winner_id, status")
-    .eq("league_id", leagueId)
-    .eq("round", league.current_round);
+    .eq("group_id", groupId)
+    .eq("round", group.current_round);
   if (!roundMatches || roundMatches.length === 0) return;
-
-  const incomplete = roundMatches.filter((m) => m.status !== "completed");
-  if (incomplete.length > 0) return;
+  if (roundMatches.some((m) => m.status !== "completed")) return;
 
   const winners = roundMatches
     .map((m) => m.winner_id)
     .filter((w): w is string => !!w);
 
-  if (winners.length === 1) {
-    await admin
-      .from("leagues")
-      .update({ status: "completed" })
-      .eq("id", leagueId);
+  if (winners.length <= 1) {
+    await admin.from("groups").update({ status: "completed" }).eq("id", groupId);
     return;
   }
 
-  const { matches: nextMatches } = buildNextRound(winners);
-  if (nextMatches.length === 0) return;
+  const { matches, byes } = buildPairings(winners);
+  const nextRound = group.current_round + 1;
+  const ekDate = getNextEkadashi(new Date(), group.timezone, false).date
+    .toISOString()
+    .slice(0, 10);
 
-  const nextRound = league.current_round + 1;
-  // Schedule on the next Ekadashi after today.
-  const nextEk = getNextEkadashi(new Date(), league.timezone, false);
-  const ekDate = nextEk.date.toISOString().slice(0, 10);
-
-  const rows = nextMatches.map(([a, b]) => ({
-    league_id: leagueId,
+  const matchRows = matches.map(([a, b]) => ({
+    group_id: groupId,
     round: nextRound,
     ekadashi_date: ekDate,
     player_a: a,
     player_b: b,
     status: "scheduled" as MatchStatus,
   }));
-  await admin.from("matches").insert(rows);
-  await admin
-    .from("leagues")
-    .update({ current_round: nextRound })
-    .eq("id", leagueId);
+  const byeRows = byes.map((a) => ({
+    group_id: groupId,
+    round: nextRound,
+    ekadashi_date: ekDate,
+    player_a: a,
+    player_b: null,
+    winner_id: a,
+    status: "completed" as MatchStatus,
+  }));
+  await admin.from("matches").insert([...matchRows, ...byeRows]);
+  await admin.from("groups").update({ current_round: nextRound }).eq("id", groupId);
+
+  // A bye in the new round may immediately leave a single survivor; re-check.
+  if (matchRows.length === 0) await maybeAdvanceRound(groupId);
 }

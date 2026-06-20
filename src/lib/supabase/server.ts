@@ -6,7 +6,7 @@ function getEnv(name: string): string {
   const v = process.env[name];
   if (!v) {
     throw new Error(
-      `Missing environment variable: ${name}. Did you create .env.local from .env.example?`,
+      `Missing environment variable: ${name}. Create .env.local from .env.example.`,
     );
   }
   return v;
@@ -28,8 +28,7 @@ export async function createClient() {
               cookieStore.set(name, value, options);
             });
           } catch {
-            // Setting cookies from a React Server Component is not allowed;
-            // we'll rely on the middleware to refresh the session cookie.
+            // Called from a Server Component; the proxy refreshes the cookie.
           }
         },
       },

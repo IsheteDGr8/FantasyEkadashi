@@ -3,24 +3,17 @@
 import { useState } from "react";
 import { Button } from "@/components/ui";
 
-interface Props {
-  text: string;
-  children: React.ReactNode;
-}
-
-export function CopyButton({ text, children }: Props) {
+export function CopyButton({ text, children }: { text: string; children: React.ReactNode }) {
   const [copied, setCopied] = useState(false);
-
   async function copy() {
     try {
       await navigator.clipboard.writeText(text);
       setCopied(true);
       setTimeout(() => setCopied(false), 1500);
     } catch {
-      // ignore
+      /* ignore */
     }
   }
-
   return (
     <Button variant="secondary" size="sm" onClick={copy}>
       {copied ? "Copied!" : children}

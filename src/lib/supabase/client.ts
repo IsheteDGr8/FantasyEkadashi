@@ -5,7 +5,7 @@ function getEnv(name: string): string {
   const v = process.env[name];
   if (!v) {
     throw new Error(
-      `Missing environment variable: ${name}. Did you create .env.local from .env.example?`,
+      `Missing environment variable: ${name}. Create .env.local from .env.example.`,
     );
   }
   return v;

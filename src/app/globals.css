@@ -1,16 +1,16 @@
 @import "tailwindcss";
 
 :root {
-  /* Warm dawn palette: saffron + indigo evoke sunrise on an Ekadashi morning. */
+  /* Warm dawn palette: saffron + lunar violet evoke an Ekadashi sunrise. */
   --background: #0b0a14;
   --foreground: #f5f1ea;
   --muted: #a89f95;
   --surface: #15131f;
   --surface-2: #1d1a2b;
   --border: #2a253a;
-  --accent: #f59e0b;        /* saffron */
+  --accent: #f59e0b;
   --accent-foreground: #1a1306;
-  --accent-2: #a855f7;      /* lunar violet */
+  --accent-2: #a855f7;
   --success: #34d399;
   --danger: #f87171;
 }
@@ -53,7 +53,6 @@ body {
   -webkit-tap-highlight-color: transparent;
 }
 
-/* Subtle radial sky behind the whole app */
 body {
   background-image:
     radial-gradient(ellipse 80% 50% at 50% -10%, color-mix(in srgb, var(--accent) 18%, transparent), transparent 60%),
@@ -61,17 +60,8 @@ body {
   background-attachment: fixed;
 }
 
-/* Inputs / forms: better defaults */
-input,
-textarea,
-select,
-button {
-  font: inherit;
-}
-
-button {
-  cursor: pointer;
-}
+input, textarea, select, button { font: inherit; }
+button { cursor: pointer; }
 
 ::selection {
   background: color-mix(in srgb, var(--accent) 50%, transparent);

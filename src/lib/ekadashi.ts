@@ -1,26 +1,18 @@
 /**
  * Ekadashi date calculation.
  *
- * Background: a "tithi" is 1/30th of a synodic lunar month (one tithi ≈ 12°
- * of moon-sun elongation). Tithi 11 of the bright half (Shukla Paksha) and
- * tithi 11 of the dark half (Krishna Paksha) are both called Ekadashi.
- * There are ~24 Ekadashis per year.
+ * A "tithi" is 1/30th of a synodic lunar month (~12° of moon-sun elongation).
+ * Tithi 11 of the bright half (Shukla Paksha) and tithi 11 of the dark half
+ * (Krishna Paksha) are both Ekadashi — ~24 per year.
  *
- * Because tithis are 20-26h long (mean ~23.6h) and calendar days are 24h,
- * occasionally a tithi spans two sunrises (vriddhi → "doubled") or falls
- * entirely between two consecutive sunrises (kshaya → "skipped"). To avoid
- * either case producing wrong scheduling, we don't sample at sunrise. Instead
- * we:
- *
- *   1. Walk forward hourly from a start instant, tracking moon phase.
- *   2. Identify every window during which the tithi index is 10 (Shukla
- *      Ekadashi) or 25 (Krishna Ekadashi).
- *   3. Assign each window to the calendar date (in the user's timezone) that
- *      contains the window's midpoint.
- *
- * This yields exactly one Ekadashi per half-month, in a stable order.
- *
- * Results are memoized per (year, timezone).
+ * Tithis are 20-26h long, so occasionally one spans two sunrises (vriddhi /
+ * "doubled") or falls entirely between two sunrises (kshaya / "skipped").
+ * Sampling at a single sunrise therefore mis-dates some Ekadashis. Instead we:
+ *   1. Walk forward hourly, tracking the moon phase.
+ *   2. Find each window where the tithi index is 10 (Shukla) or 25 (Krishna).
+ *   3. Assign each window to the calendar date (in the group's timezone)
+ *      containing the window's midpoint.
+ * This yields exactly one Ekadashi per half-month. Results are memoized.
  */
 
 import SunCalc from "suncalc";
@@ -32,12 +24,12 @@ export const DEFAULT_TIMEZONE = "Asia/Kolkata";
 export type Paksha = "shukla" | "krishna";
 
 export interface EkadashiInfo {
-  /** Calendar date at midnight in the reference timezone, normalized to UTC. */
+  /** Calendar date at midnight in the reference timezone, as a UTC instant. */
   date: Date;
   paksha: Paksha;
 }
 
-const SAMPLE_INTERVAL_MS = 60 * 60 * 1000; // 1 hour
+const SAMPLE_INTERVAL_MS = 60 * 60 * 1000;
 
 function tithiIndexAt(instant: Date): number {
   const phase = SunCalc.getMoonIllumination(instant).phase; // 0..1
@@ -50,19 +42,12 @@ function startOfDayInTz(d: Date, tz: string): Date {
   return fromZonedTime(iso, tz);
 }
 
-/**
- * Find every Ekadashi occurrence whose midpoint falls within [start, end).
- * Bounds are interpreted in UTC.
- */
 function computeEkadashisInRange(
   start: Date,
   end: Date,
   timeZone: string,
 ): EkadashiInfo[] {
-  // Extend the search window slightly so we catch tithis straddling the
-  // boundary.
-  const PAD_DAYS = 2;
-  const padMs = PAD_DAYS * 24 * 60 * 60 * 1000;
+  const padMs = 2 * 24 * 60 * 60 * 1000;
   const searchStart = new Date(start.getTime() - padMs);
   const searchEnd = new Date(end.getTime() + padMs);
 
@@ -83,9 +68,8 @@ function computeEkadashisInRange(
     } else if (!isEk && prevIsEk && windowStart) {
       const mid = new Date((windowStart.getTime() + cursor.getTime()) / 2);
       if (mid >= start && mid < end) {
-        const day = startOfDayInTz(mid, timeZone);
         occurrences.push({
-          date: day,
+          date: startOfDayInTz(mid, timeZone),
           paksha: prevTithi === 10 ? "shukla" : "krishna",
         });
       }
@@ -97,87 +81,60 @@ function computeEkadashisInRange(
   return occurrences;
 }
 
-// Memoize per (year, tz).
 const yearCache = new Map<string, EkadashiInfo[]>();
 
 function getEkadashisForYear(year: number, timeZone: string): EkadashiInfo[] {
   const key = `${year}|${timeZone}`;
-  let cached = yearCache.get(key);
+  const cached = yearCache.get(key);
   if (cached) return cached;
   const start = fromZonedTime(`${year}-01-01T00:00:00`, timeZone);
   const end = fromZonedTime(`${year + 1}-01-01T00:00:00`, timeZone);
-  cached = computeEkadashisInRange(start, end, timeZone);
-  yearCache.set(key, cached);
-  return cached;
+  const result = computeEkadashisInRange(start, end, timeZone);
+  yearCache.set(key, result);
+  return result;
 }
 
-/** True if the given calendar date is an Ekadashi day in the given tz. */
-export function isEkadashi(
-  date: Date,
-  timeZone: string = DEFAULT_TIMEZONE,
-): boolean {
+export function isEkadashi(date: Date, timeZone = DEFAULT_TIMEZONE): boolean {
   const z = toZonedTime(date, timeZone);
   const dayStart = startOfDayInTz(date, timeZone).getTime();
-  const list = getEkadashisForYear(z.getFullYear(), timeZone);
-  return list.some((e) => e.date.getTime() === dayStart);
+  return getEkadashisForYear(z.getFullYear(), timeZone).some(
+    (e) => e.date.getTime() === dayStart,
+  );
 }
 
-export function getPaksha(
-  date: Date,
-  timeZone: string = DEFAULT_TIMEZONE,
-): Paksha | null {
+export function getPaksha(date: Date, timeZone = DEFAULT_TIMEZONE): Paksha | null {
   const z = toZonedTime(date, timeZone);
   const dayStart = startOfDayInTz(date, timeZone).getTime();
-  const list = getEkadashisForYear(z.getFullYear(), timeZone);
-  return list.find((e) => e.date.getTime() === dayStart)?.paksha ?? null;
+  return (
+    getEkadashisForYear(z.getFullYear(), timeZone).find(
+      (e) => e.date.getTime() === dayStart,
+    )?.paksha ?? null
+  );
 }
 
-/**
- * Find the next Ekadashi at or after `from`. If `from` itself is Ekadashi
- * and `includeToday` is true, returns today.
- */
 export function getNextEkadashi(
   from: Date = new Date(),
-  timeZone: string = DEFAULT_TIMEZONE,
+  timeZone = DEFAULT_TIMEZONE,
   includeToday = true,
 ): EkadashiInfo {
   const fromDay = startOfDayInTz(from, timeZone);
   const threshold = includeToday
     ? fromDay
     : startOfDayInTz(addDays(fromDay, 1), timeZone);
-
-  const z = toZonedTime(from, timeZone);
-  const year = z.getFullYear();
+  const year = toZonedTime(from, timeZone).getFullYear();
   for (let i = 0; i < 2; i++) {
-    const list = getEkadashisForYear(year + i, timeZone);
-    const match = list.find((e) => e.date.getTime() >= threshold.getTime());
+    const match = getEkadashisForYear(year + i, timeZone).find(
+      (e) => e.date.getTime() >= threshold.getTime(),
+    );
     if (match) return match;
   }
   throw new Error("Could not find next Ekadashi within 2 years");
 }
 
-export function getPreviousEkadashi(
-  from: Date = new Date(),
-  timeZone: string = DEFAULT_TIMEZONE,
-): EkadashiInfo {
-  const fromDay = startOfDayInTz(from, timeZone);
-  const z = toZonedTime(from, timeZone);
-  const year = z.getFullYear();
-  for (let i = 0; i < 2; i++) {
-    const list = getEkadashisForYear(year - i, timeZone)
-      .slice()
-      .reverse();
-    const match = list.find((e) => e.date.getTime() < fromDay.getTime());
-    if (match) return match;
-  }
-  throw new Error("Could not find previous Ekadashi within 2 years");
-}
-
-/** All Ekadashis from `start` (inclusive) to `end` (exclusive). */
 export function listEkadashisBetween(
   start: Date,
   end: Date,
-  timeZone: string = DEFAULT_TIMEZONE,
+  timeZone = DEFAULT_TIMEZONE,
 ): EkadashiInfo[] {
   const zs = toZonedTime(start, timeZone);
   const ze = toZonedTime(end, timeZone);
@@ -192,24 +149,28 @@ export function listEkadashisBetween(
   return out;
 }
 
-/**
- * Window during which match submissions are accepted: the full Ekadashi day
- * in the reference timezone, plus `graceHours` after midnight so users can
- * submit their end-of-day screen time.
- */
 export interface SubmissionWindow {
   opensAt: Date;
   closesAt: Date;
 }
 
+/**
+ * Submissions accepted for the full Ekadashi day in the group's timezone,
+ * plus `graceHours` after midnight so players can post end-of-day numbers.
+ */
 export function getSubmissionWindow(
   ekadashiDate: Date,
-  timeZone: string = DEFAULT_TIMEZONE,
+  timeZone = DEFAULT_TIMEZONE,
   graceHours = 12,
 ): SubmissionWindow {
-  const opens = startOfDayInTz(ekadashiDate, timeZone);
-  const closes = new Date(
-    opens.getTime() + (24 + graceHours) * 60 * 60 * 1000,
+  const opensAt = startOfDayInTz(ekadashiDate, timeZone);
+  const closesAt = new Date(
+    opensAt.getTime() + (24 + graceHours) * 60 * 60 * 1000,
   );
-  return { opensAt: opens, closesAt: closes };
+  return { opensAt, closesAt };
+}
+
+/** Parse a 'YYYY-MM-DD' DB date into a UTC instant at local midnight. */
+export function parseEkadashiDate(dateStr: string): Date {
+  return new Date(dateStr + "T00:00:00Z");
 }

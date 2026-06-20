@@ -1,9 +1,6 @@
 import * as React from "react";
 import { cn } from "@/lib/utils";
 
-// ---------------------------------------------------------------------------
-// Button
-// ---------------------------------------------------------------------------
 type ButtonVariant = "primary" | "secondary" | "ghost" | "danger";
 type ButtonSize = "sm" | "md" | "lg";
 
@@ -11,13 +8,10 @@ const buttonBase =
   "inline-flex items-center justify-center gap-2 rounded-full font-medium transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/60 disabled:opacity-50 disabled:cursor-not-allowed select-none whitespace-nowrap";
 
 const buttonVariants: Record<ButtonVariant, string> = {
-  primary:
-    "bg-accent text-accent-foreground hover:opacity-90 shadow-md shadow-accent/20",
-  secondary:
-    "bg-surface text-foreground border border-border hover:bg-surface-2",
+  primary: "bg-accent text-accent-foreground hover:opacity-90 shadow-md shadow-accent/20",
+  secondary: "bg-surface text-foreground border border-border hover:bg-surface-2",
   ghost: "text-foreground/80 hover:text-foreground hover:bg-surface",
-  danger:
-    "bg-danger/15 text-danger border border-danger/30 hover:bg-danger/25",
+  danger: "bg-danger/15 text-danger border border-danger/30 hover:bg-danger/25",
 };
 
 const buttonSizes: Record<ButtonSize, string> = {
@@ -33,32 +27,18 @@ export interface ButtonProps
 }
 
 export const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
-  function Button(
-    { className, variant = "primary", size = "md", ...props },
-    ref,
-  ) {
+  function Button({ className, variant = "primary", size = "md", ...props }, ref) {
     return (
       <button
         ref={ref}
-        className={cn(
-          buttonBase,
-          buttonVariants[variant],
-          buttonSizes[size],
-          className,
-        )}
+        className={cn(buttonBase, buttonVariants[variant], buttonSizes[size], className)}
         {...props}
       />
     );
   },
 );
 
-// ---------------------------------------------------------------------------
-// Card
-// ---------------------------------------------------------------------------
-export function Card({
-  className,
-  ...props
-}: React.HTMLAttributes<HTMLDivElement>) {
+export function Card({ className, ...props }: React.HTMLAttributes<HTMLDivElement>) {
   return (
     <div
       className={cn(
@@ -70,35 +50,11 @@ export function Card({
   );
 }
 
-export function CardBody({
-  className,
-  ...props
-}: React.HTMLAttributes<HTMLDivElement>) {
+export function CardBody({ className, ...props }: React.HTMLAttributes<HTMLDivElement>) {
   return <div className={cn("p-5 sm:p-6", className)} {...props} />;
 }
 
-export function CardHeader({
-  className,
-  ...props
-}: React.HTMLAttributes<HTMLDivElement>) {
-  return (
-    <div
-      className={cn(
-        "px-5 sm:px-6 pt-5 sm:pt-6 pb-2 border-b border-border/50",
-        className,
-      )}
-      {...props}
-    />
-  );
-}
-
-// ---------------------------------------------------------------------------
-// Input + Label
-// ---------------------------------------------------------------------------
-export function Input({
-  className,
-  ...props
-}: React.InputHTMLAttributes<HTMLInputElement>) {
+export function Input({ className, ...props }: React.InputHTMLAttributes<HTMLInputElement>) {
   return (
     <input
       className={cn(
@@ -110,21 +66,12 @@ export function Input({
   );
 }
 
-export function Label({
-  className,
-  ...props
-}: React.LabelHTMLAttributes<HTMLLabelElement>) {
+export function Label({ className, ...props }: React.LabelHTMLAttributes<HTMLLabelElement>) {
   return (
-    <label
-      className={cn("text-sm font-medium text-foreground/80", className)}
-      {...props}
-    />
+    <label className={cn("text-sm font-medium text-foreground/80", className)} {...props} />
   );
 }
 
-// ---------------------------------------------------------------------------
-// Badge
-// ---------------------------------------------------------------------------
 type BadgeVariant = "default" | "accent" | "success" | "danger" | "muted";
 const badgeVariants: Record<BadgeVariant, string> = {
   default: "bg-surface-2 text-foreground border border-border",

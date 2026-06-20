@@ -4,13 +4,15 @@ import { createClient } from "@/lib/supabase/server";
 import { SignOutButton } from "./SignOutButton";
 
 export async function Nav() {
-  let userEmail: string | null = null;
+  let signedIn = false;
+  let name: string | null = null;
   try {
     const supabase = await createClient();
     const { data } = await supabase.auth.getUser();
-    userEmail = data.user?.email ?? null;
+    signedIn = !!data.user;
+    name = (data.user?.user_metadata?.display_name as string) ?? null;
   } catch {
-    // Env vars not set yet — render the nav in logged-out state.
+    // env not set yet
   }
 
   return (
@@ -24,26 +26,17 @@ export async function Nav() {
             Fantasy <span className="text-accent">Ekadashi</span>
           </span>
         </Link>
-
         <nav className="flex items-center gap-2 sm:gap-4 text-sm">
-          {userEmail ? (
+          {signedIn ? (
             <>
-              <Link
-                href="/dashboard"
-                className="px-3 py-1.5 rounded-full text-foreground/80 hover:text-foreground hover:bg-surface transition"
-              >
+              <Link href="/dashboard" className="px-3 py-1.5 rounded-full text-foreground/80 hover:text-foreground hover:bg-surface transition">
                 Dashboard
               </Link>
-              <span className="hidden sm:inline text-muted text-xs">
-                {userEmail}
-              </span>
+              {name && <span className="hidden sm:inline text-muted text-xs">{name}</span>}
               <SignOutButton />
             </>
           ) : (
-            <Link
-              href="/sign-in"
-              className="px-4 py-1.5 rounded-full bg-accent text-accent-foreground font-medium hover:opacity-90 transition"
-            >
+            <Link href="/sign-in" className="px-4 py-1.5 rounded-full bg-accent text-accent-foreground font-medium hover:opacity-90 transition">
               Sign in
             </Link>
           )}

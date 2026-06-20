@@ -3,7 +3,7 @@
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { Button, Label } from "@/components/ui";
-import { disputeOpponentSubmission } from "@/server/actions/matches";
+import { disputeOpponent } from "@/server/actions/matches";
 
 export function DisputeForm({ matchId }: { matchId: string }) {
   const [note, setNote] = useState("");
@@ -14,15 +14,15 @@ export function DisputeForm({ matchId }: { matchId: string }) {
   function submit() {
     setError(null);
     startTransition(async () => {
-      try {
-        const fd = new FormData();
-        fd.set("matchId", matchId);
-        if (note) fd.set("note", note);
-        await disputeOpponentSubmission(fd);
-        router.refresh();
-      } catch (e) {
-        setError(e instanceof Error ? e.message : "Dispute failed.");
+      const fd = new FormData();
+      fd.set("matchId", matchId);
+      if (note) fd.set("note", note);
+      const result = await disputeOpponent(fd);
+      if (result && "error" in result) {
+        setError(result.error);
+        return;
       }
+      router.refresh();
     });
   }
 
@@ -34,22 +34,14 @@ export function DisputeForm({ matchId }: { matchId: string }) {
         value={note}
         onChange={(e) => setNote(e.target.value)}
         maxLength={500}
-        placeholder="e.g. The screenshot shows weekly average, not today."
+        placeholder="e.g. The screenshot shows the weekly average, not Ekadashi day."
         className="w-full min-h-[80px] rounded-xl border border-border bg-surface-2 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-accent/60"
       />
       {error && (
-        <p className="text-sm text-danger rounded-lg bg-danger/10 border border-danger/30 p-3">
-          {error}
-        </p>
+        <p className="text-sm text-danger rounded-lg bg-danger/10 border border-danger/30 p-3">{error}</p>
       )}
-      <Button
-        type="button"
-        variant="danger"
-        size="sm"
-        onClick={submit}
-        disabled={pending}
-      >
-        {pending ? "Filing…" : "Dispute"}
+      <Button type="button" variant="danger" size="sm" onClick={submit} disabled={pending}>
+        {pending ? "Filing…" : "Dispute opponent's submission"}
       </Button>
     </div>
   );

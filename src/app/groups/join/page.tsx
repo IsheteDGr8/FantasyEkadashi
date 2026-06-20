@@ -1,27 +1,29 @@
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
-import { joinLeague } from "@/server/actions/leagues";
+import { joinGroup } from "@/server/actions/groups";
 import { Card, CardBody, Button, Input, Label } from "@/components/ui";
+import { ActionForm } from "@/components/FormCard";
+import { SetupRequiredScreen, supabaseConfigured } from "@/components/SetupRequired";
 
-export const metadata = { title: "Join league" };
+export const metadata = { title: "Join group" };
 
-export default async function JoinLeaguePage() {
+export default async function JoinGroupPage() {
+  if (!supabaseConfigured()) return <SetupRequiredScreen />;
   const supabase = await createClient();
   const { data } = await supabase.auth.getUser();
-  if (!data.user) redirect("/sign-in?next=/leagues/join");
+  if (!data.user) redirect("/sign-in");
 
   return (
     <div className="mx-auto max-w-md px-4 sm:px-6 py-12">
       <Card>
         <CardBody className="space-y-5">
           <div>
-            <h1 className="text-2xl font-semibold">Join a league</h1>
+            <h1 className="text-2xl font-semibold">Join a group</h1>
             <p className="mt-1 text-sm text-muted">
-              Enter the 6-character invite code your friend gave you.
+              Enter the 6-character code your admin gave you.
             </p>
           </div>
-
-          <form action={joinLeague} className="space-y-4">
+          <ActionForm action={joinGroup} className="space-y-4">
             <div className="space-y-1.5">
               <Label htmlFor="code">Invite code</Label>
               <Input
@@ -36,11 +38,8 @@ export default async function JoinLeaguePage() {
                 placeholder="ABCDEF"
               />
             </div>
-
-            <Button type="submit" size="lg" className="w-full">
-              Join
-            </Button>
-          </form>
+            <Button type="submit" size="lg" className="w-full">Join</Button>
+          </ActionForm>
         </CardBody>
       </Card>
     </div>
