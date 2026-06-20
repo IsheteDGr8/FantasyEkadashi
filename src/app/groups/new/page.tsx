@@ -48,7 +48,7 @@ export default async function NewGroupPage() {
           <ActionForm action={createGroup} className="space-y-4">
             <div className="space-y-1.5">
               <Label htmlFor="name">Group name</Label>
-              <Input id="name" name="name" required minLength={2} maxLength={60} placeholder="e.g. Roomies of Vrindavan" />
+              <Input id="name" name="name" required minLength={2} maxLength={60} placeholder="e.g. Powerful Pandavas" />
             </div>
             <div className="space-y-1.5">
               <Label htmlFor="timezone">Timezone (Ekadashi day cutoff)</Label>
