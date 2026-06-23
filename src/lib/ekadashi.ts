@@ -172,18 +172,21 @@ export interface SubmissionWindow {
 }
 
 /**
- * Submissions accepted for the full Ekadashi day in the group's timezone,
- * plus `graceHours` after midnight so players can post end-of-day numbers.
+ * Submissions open the day AFTER the Ekadashi (so the screenshot captures the
+ * full Ekadashi day's totals) and stay open for `graceDays` days, closing at
+ * the start of the following day — all in the group's timezone.
+ *
+ * Example (graceDays = 2): Ekadashi Jun 25 -> opens Jun 26 00:00,
+ * closes Jun 28 00:00 (upload through the evening of Jun 27).
  */
 export function getSubmissionWindow(
   ekadashiDate: Date,
   timeZone = DEFAULT_TIMEZONE,
-  graceHours = 12,
+  graceDays = 2,
 ): SubmissionWindow {
-  const opensAt = startOfDayInTz(ekadashiDate, timeZone);
-  const closesAt = new Date(
-    opensAt.getTime() + (24 + graceHours) * 60 * 60 * 1000,
-  );
+  const ekStart = startOfDayInTz(ekadashiDate, timeZone);
+  const opensAt = startOfDayInTz(addDays(ekStart, 1), timeZone);
+  const closesAt = startOfDayInTz(addDays(ekStart, 1 + graceDays), timeZone);
   return { opensAt, closesAt };
 }
 

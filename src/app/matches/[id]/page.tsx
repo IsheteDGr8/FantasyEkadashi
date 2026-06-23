@@ -126,13 +126,14 @@ export default async function MatchPage({ params }: PageProps) {
             {submissionOpen ? (
               <span>
                 Submissions <span className="text-success">open</span> until{" "}
-                {win.closesAt.toLocaleString("en-US", { timeZone: group.timezone })} ({group.timezone}).
+                {win.closesAt.toLocaleString("en-US", { timeZone: group.timezone, dateStyle: "medium", timeStyle: "short" })} ({group.timezone}).
               </span>
             ) : submissionClosed ? (
               <span className="text-muted">Submission window has closed.</span>
             ) : (
               <span className="text-muted">
-                Opens {win.opensAt.toLocaleString("en-US", { timeZone: group.timezone })} ({group.timezone}).
+                Submissions open the day after the Ekadashi —{" "}
+                {win.opensAt.toLocaleString("en-US", { timeZone: group.timezone, dateStyle: "medium", timeStyle: "short" })} ({group.timezone}).
               </span>
             )}
           </CardBody>
@@ -166,9 +167,10 @@ export default async function MatchPage({ params }: PageProps) {
                 {mySub ? "Update your submission" : "Submit your screen time"}
               </h2>
               <p className="text-sm text-muted mt-1">
-                On iOS: Settings → Screen Time → See All Activity → tap the day →
-                &ldquo;Show Categories&rdquo;. Screenshot it and upload; we read
-                Social, Games, Entertainment, and Creativity.
+                On iOS: Settings → Screen Time → See All Activity → tap the{" "}
+                <span className="text-foreground">Ekadashi day</span> →
+                &ldquo;Show Categories&rdquo;. Screenshot it and upload (or paste
+                it); we read Social, Games, Entertainment, and Creativity.
               </p>
             </div>
             <ScreenTimeSubmit matchId={match.id} existing={mySub} />

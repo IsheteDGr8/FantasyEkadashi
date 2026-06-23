@@ -1,8 +1,8 @@
 "use client";
 
-import { useState, useTransition, useRef } from "react";
+import { useState, useTransition, useRef, useCallback, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { Upload, Loader2, Sparkles } from "lucide-react";
+import { Upload, Loader2, Sparkles, ClipboardPaste } from "lucide-react";
 import { Button, Input, Label } from "@/components/ui";
 import { createClient } from "@/lib/supabase/client";
 import { submitScreenTime } from "@/server/actions/matches";
@@ -85,6 +85,7 @@ export function ScreenTimeSubmit({
   const [error, setError] = useState<string | null>(null);
   const [pending, startTransition] = useTransition();
   const inputRef = useRef<HTMLInputElement>(null);
+  const previewRef = useRef<string | null>(null);
 
   function parsed(): {
     social_min: number;
@@ -102,26 +103,32 @@ export function ScreenTimeSubmit({
     };
   }
 
-  async function onPick(f: File | null) {
+  const onPick = useCallback(async (f: File | null) => {
     setError(null);
     if (!f) return;
+    if (!f.type.startsWith("image/")) {
+      setError("That doesn't look like an image — choose or paste a screenshot.");
+      return;
+    }
     setFile(f);
-    if (previewUrl) URL.revokeObjectURL(previewUrl);
-    setPreviewUrl(URL.createObjectURL(f));
+    if (previewRef.current) URL.revokeObjectURL(previewRef.current);
+    const url = URL.createObjectURL(f);
+    previewRef.current = url;
+    setPreviewUrl(url);
     setWork("ocr");
     try {
       const Tesseract = await import("tesseract.js");
       const { data } = await Tesseract.recognize(f, "eng");
-      const next = { ...fields };
+      const recognized: Partial<Fields> = {};
       let found = false;
       for (const cat of CATEGORIES) {
         const v = extractCategory(data.text, cat.ocrAliases);
         if (v !== null) {
-          next[cat.field] = formatMinutes(v);
+          recognized[cat.field] = formatMinutes(v);
           found = true;
         }
       }
-      setFields(next);
+      setFields((prev) => ({ ...prev, ...recognized }));
       setOcrFound(found);
       if (!found) {
         setError("Couldn't read categories automatically — please type them in.");
@@ -132,7 +139,33 @@ export function ScreenTimeSubmit({
     } finally {
       setWork("");
     }
-  }
+  }, []);
+
+  // Let users paste a copied screenshot from anywhere on the page.
+  useEffect(() => {
+    function onPaste(e: ClipboardEvent) {
+      const items = e.clipboardData?.items;
+      if (!items) return;
+      for (const item of items) {
+        if (item.type.startsWith("image/")) {
+          const f = item.getAsFile();
+          if (f) {
+            e.preventDefault();
+            void onPick(f);
+          }
+          return;
+        }
+      }
+    }
+    window.addEventListener("paste", onPaste);
+    return () => window.removeEventListener("paste", onPaste);
+  }, [onPick]);
+
+  useEffect(() => {
+    return () => {
+      if (previewRef.current) URL.revokeObjectURL(previewRef.current);
+    };
+  }, []);
 
   function submit() {
     setError(null);
@@ -209,7 +242,6 @@ export function ScreenTimeSubmit({
         ref={inputRef}
         type="file"
         accept="image/*"
-        capture="environment"
         className="hidden"
         onChange={(e) => onPick(e.target.files?.[0] ?? null)}
       />
@@ -223,11 +255,32 @@ export function ScreenTimeSubmit({
         {work === "ocr" ? (
           <><Loader2 size={16} className="animate-spin" /> Reading screenshot…</>
         ) : file ? (
-          <><Upload size={16} /> Replace screenshot</>
+          <><Upload size={16} /> Choose a different screenshot</>
         ) : (
-          <><Upload size={16} /> Upload &ldquo;Show Categories&rdquo; screenshot</>
+          <><Upload size={16} /> Choose screenshot from Photos</>
         )}
       </Button>
+      <div
+        tabIndex={0}
+        onPaste={(e) => {
+          const items = e.clipboardData?.items;
+          if (!items) return;
+          for (const item of items) {
+            if (item.type.startsWith("image/")) {
+              const f = item.getAsFile();
+              if (f) {
+                e.preventDefault();
+                void onPick(f);
+              }
+              return;
+            }
+          }
+        }}
+        className="flex items-center justify-center gap-2 rounded-xl border border-dashed border-border bg-surface-2/50 px-4 py-3 text-sm text-muted text-center focus:outline-none focus:ring-2 focus:ring-accent/60"
+      >
+        <ClipboardPaste size={16} />
+        …or paste a copied screenshot (Ctrl/Cmd + V)
+      </div>
 
       {previewUrl && (
         <div className="rounded-xl border border-border p-2 bg-surface-2">
