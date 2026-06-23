@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { Moon, Trophy, Smartphone, Calendar } from "lucide-react";
-import { getNextEkadashi } from "@/lib/ekadashi";
+import { getNextEkadashiInZone } from "@/lib/ekadashi";
 import { formatDate } from "@/lib/utils";
 import { Button, Card, CardBody } from "@/components/ui";
 import { CountdownToEkadashi } from "@/components/CountdownToEkadashi";
@@ -8,7 +8,7 @@ import { CountdownToEkadashi } from "@/components/CountdownToEkadashi";
 const DISPLAY_TZ = "America/Los_Angeles";
 
 export default function Home() {
-  const next = getNextEkadashi(new Date(), DISPLAY_TZ);
+  const next = getNextEkadashiInZone(new Date(), "Asia/Kolkata", DISPLAY_TZ);
 
   return (
     <div className="mx-auto max-w-5xl px-4 sm:px-6">

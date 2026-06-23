@@ -131,6 +131,23 @@ export function getNextEkadashi(
   throw new Error("Could not find next Ekadashi within 2 years");
 }
 
+/**
+ * Find the next Ekadashi using a canonical timezone (IST — the traditional
+ * reference for the date) but anchor it to midnight in a display timezone. This
+ * keeps the calendar date the same as India (e.g. June 25) while the countdown
+ * targets the viewer's local midnight of that date.
+ */
+export function getNextEkadashiInZone(
+  from: Date,
+  canonicalTimeZone: string,
+  displayTimeZone: string,
+): EkadashiInfo {
+  const ek = getNextEkadashi(from, canonicalTimeZone, true);
+  const z = toZonedTime(ek.date, canonicalTimeZone);
+  const iso = `${z.getFullYear()}-${String(z.getMonth() + 1).padStart(2, "0")}-${String(z.getDate()).padStart(2, "0")}T00:00:00`;
+  return { date: fromZonedTime(iso, displayTimeZone), paksha: ek.paksha };
+}
+
 export function listEkadashisBetween(
   start: Date,
   end: Date,

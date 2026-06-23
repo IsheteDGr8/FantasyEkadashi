@@ -3,7 +3,7 @@ import Link from "next/link";
 import { Plus, Users, Trophy, Calendar } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
 import { getCurrentProfile } from "@/lib/auth";
-import { getNextEkadashi } from "@/lib/ekadashi";
+import { getNextEkadashiInZone } from "@/lib/ekadashi";
 import { formatDate } from "@/lib/utils";
 import { Card, CardBody, Button, Badge } from "@/components/ui";
 import { CountdownToEkadashi } from "@/components/CountdownToEkadashi";
@@ -41,7 +41,7 @@ export default async function DashboardPage() {
 
   const groupNameById = new Map((groups ?? []).map((g) => [g.id, g.name]));
   const tz = "America/Los_Angeles";
-  const next = getNextEkadashi(new Date(), tz);
+  const next = getNextEkadashiInZone(new Date(), "Asia/Kolkata", tz);
 
   return (
     <div className="mx-auto max-w-5xl px-4 sm:px-6 py-8 space-y-8">
