@@ -32,7 +32,9 @@ export async function Nav() {
               <Link href="/dashboard" className="px-3 py-1.5 rounded-full text-foreground/80 hover:text-foreground hover:bg-surface transition">
                 Dashboard
               </Link>
-              {name && <span className="hidden sm:inline text-muted text-xs">{name}</span>}
+              <Link href="/profile" className="px-3 py-1.5 rounded-full text-foreground/80 hover:text-foreground hover:bg-surface transition">
+                {name ?? "Profile"}
+              </Link>
               <SignOutButton />
             </>
           ) : (

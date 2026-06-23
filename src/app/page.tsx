@@ -5,8 +5,10 @@ import { formatDate } from "@/lib/utils";
 import { Button, Card, CardBody } from "@/components/ui";
 import { CountdownToEkadashi } from "@/components/CountdownToEkadashi";
 
+const DISPLAY_TZ = "America/Los_Angeles";
+
 export default function Home() {
-  const next = getNextEkadashi();
+  const next = getNextEkadashi(new Date(), DISPLAY_TZ);
 
   return (
     <div className="mx-auto max-w-5xl px-4 sm:px-6">
@@ -39,8 +41,10 @@ export default function Home() {
             <div className="flex items-center gap-2 text-xs uppercase tracking-wider text-muted">
               <Calendar size={14} /> Next Ekadashi
             </div>
-            <h2 className="mt-2 text-2xl font-semibold">{formatDate(next.date)}</h2>
-            <p className="mt-1 text-sm text-muted capitalize">{next.paksha} paksha · IST</p>
+            <h2 className="mt-2 text-2xl font-semibold">{formatDate(next.date, DISPLAY_TZ)}</h2>
+            <p className="mt-1 text-sm text-muted">
+              <span className="capitalize">{next.paksha} paksha</span> · Los Angeles (PT)
+            </p>
           </div>
           <div className="sm:text-right">
             <CountdownToEkadashi target={next.date.toISOString()} />

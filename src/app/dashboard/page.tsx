@@ -40,7 +40,7 @@ export default async function DashboardPage() {
     : { data: [] };
 
   const groupNameById = new Map((groups ?? []).map((g) => [g.id, g.name]));
-  const tz = "Asia/Kolkata";
+  const tz = "America/Los_Angeles";
   const next = getNextEkadashi(new Date(), tz);
 
   return (
@@ -49,6 +49,9 @@ export default async function DashboardPage() {
         <div>
           <p className="text-sm text-muted">Welcome back,</p>
           <h1 className="text-3xl font-semibold">{profile.display_name}</h1>
+          <Link href="/profile" className="text-sm text-accent hover:underline">
+            Edit profile
+          </Link>
         </div>
         <div className="flex gap-2">
           <Link href="/groups/join">
@@ -69,7 +72,9 @@ export default async function DashboardPage() {
               <Calendar size={14} /> Next Ekadashi
             </div>
             <h2 className="mt-2 text-2xl font-semibold">{formatDate(next.date, tz)}</h2>
-            <p className="mt-1 text-sm text-muted capitalize">{next.paksha} paksha · {tz}</p>
+            <p className="mt-1 text-sm text-muted">
+              <span className="capitalize">{next.paksha} paksha</span> · Los Angeles (PT)
+            </p>
           </div>
           <div className="sm:text-right">
             <CountdownToEkadashi target={next.date.toISOString()} />
