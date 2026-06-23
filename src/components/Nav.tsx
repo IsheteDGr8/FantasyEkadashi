@@ -27,6 +27,9 @@ export async function Nav() {
           </span>
         </Link>
         <nav className="flex items-center gap-2 sm:gap-4 text-sm">
+          <Link href="/learn" className="px-3 py-1.5 rounded-full text-foreground/80 hover:text-foreground hover:bg-surface transition">
+            Learn
+          </Link>
           {signedIn ? (
             <>
               <Link href="/dashboard" className="px-3 py-1.5 rounded-full text-foreground/80 hover:text-foreground hover:bg-surface transition">

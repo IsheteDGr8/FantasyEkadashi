@@ -67,3 +67,31 @@ button { cursor: pointer; }
   background: color-mix(in srgb, var(--accent) 50%, transparent);
   color: var(--foreground);
 }
+
+@keyframes fe-float {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-10px); }
+}
+
+@keyframes fe-glow {
+  0%, 100% { opacity: 0.55; transform: scale(1); }
+  50% { opacity: 0.85; transform: scale(1.06); }
+}
+
+@keyframes fe-spin-slow {
+  to { transform: rotate(360deg); }
+}
+
+@keyframes fe-twinkle {
+  0%, 100% { opacity: 0.15; }
+  50% { opacity: 0.9; }
+}
+
+.fe-float { animation: fe-float 7s ease-in-out infinite; }
+.fe-glow { animation: fe-glow 6s ease-in-out infinite; }
+.fe-spin-slow { animation: fe-spin-slow 120s linear infinite; }
+.fe-twinkle { animation: fe-twinkle 4s ease-in-out infinite; }
+
+@media (prefers-reduced-motion: reduce) {
+  .fe-float, .fe-glow, .fe-spin-slow, .fe-twinkle { animation: none; }
+}

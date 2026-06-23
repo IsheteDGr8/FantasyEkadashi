@@ -183,6 +183,40 @@ export async function startTournament(groupId: string): Promise<ActionResult> {
   return { ok: true };
 }
 
+const RenameSchema = z.object({ name: z.string().trim().min(2).max(60) });
+
+/** Admin renames a league. */
+export async function renameGroup(
+  groupId: string,
+  formData: FormData,
+): Promise<ActionResult> {
+  const user = await requireUser();
+  const admin = createAdminClient();
+
+  const { data: group } = await admin
+    .from("groups")
+    .select("admin_id")
+    .eq("id", groupId)
+    .single();
+  if (!group) return { error: "League not found." };
+  if (group.admin_id !== user.id) {
+    return { error: "Only the admin can rename this league." };
+  }
+
+  const parsed = RenameSchema.safeParse({ name: formData.get("name") });
+  if (!parsed.success) return { error: "Enter a name with 2–60 characters." };
+
+  const { error } = await admin
+    .from("groups")
+    .update({ name: parsed.data.name })
+    .eq("id", groupId);
+  if (error) return { error: error.message };
+
+  revalidatePath(`/groups/${groupId}`);
+  revalidatePath("/dashboard");
+  return { ok: true };
+}
+
 /** Admin permanently deletes a league (any status). Cascades to all data. */
 export async function deleteGroup(groupId: string): Promise<ActionResult> {
   const user = await requireUser();

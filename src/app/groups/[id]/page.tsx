@@ -12,6 +12,7 @@ import {
 import { generateMatchupsForGroup } from "@/server/lib/matchmaking";
 import { Card, CardBody, Badge } from "@/components/ui";
 import { Bracket, type MatchView } from "@/components/Bracket";
+import { GroupTitle } from "@/components/GroupTitle";
 import { Leaderboard, type LeaderboardRow } from "@/components/Leaderboard";
 import { CopyButton } from "@/components/CopyButton";
 import { ActionButton } from "@/components/ActionButton";
@@ -208,7 +209,7 @@ export default async function GroupPage({ params, searchParams }: PageProps) {
       <header className="flex flex-wrap items-end justify-between gap-3">
         <div>
           <p className="text-xs uppercase tracking-wider text-muted">League</p>
-          <h1 className="text-3xl font-semibold mt-1">{group.name}</h1>
+          <GroupTitle groupId={group.id} name={group.name} canEdit={isAdmin} />
           <div className="mt-2 flex items-center gap-2">
             <Badge variant={group.status === "active" ? "accent" : group.status === "completed" ? "success" : "muted"}>
               {group.status === "open" ? "not started" : group.status}

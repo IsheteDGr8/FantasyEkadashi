@@ -33,6 +33,12 @@ export default function Home() {
           <Link href="/sign-up"><Button size="lg">Create account</Button></Link>
           <Link href="/groups/join"><Button size="lg" variant="secondary">Join with a code</Button></Link>
         </div>
+        <p className="mt-4 text-sm text-muted">
+          New to Ekadashi?{" "}
+          <Link href="/learn" className="text-accent hover:underline">
+            See what it&apos;s about
+          </Link>
+        </p>
       </section>
 
       <Card className="mt-6 overflow-hidden">
