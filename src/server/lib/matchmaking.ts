@@ -43,19 +43,24 @@ export async function generateMatchupsForGroup(groupId: string): Promise<boolean
     .limit(1);
   if (existing && existing.length > 0) return false; // already generated
 
-  const cutoff = getJoinCutoff(nextEk.date, group.timezone);
   const { data: members } = await admin
     .from("group_members")
     .select("user_id, joined_at")
     .eq("group_id", groupId);
   if (!members || members.length === 0) return false;
 
-  const eligible = members
-    .filter((m) => new Date(m.joined_at) <= cutoff)
-    .map((m) => m.user_id);
-  const ineligible = members
-    .filter((m) => new Date(m.joined_at) > cutoff)
-    .map((m) => m.user_id);
+  // The founding round (first matchups ever for this league) pairs everyone
+  // who's currently in. The join cutoff only separates late joiners on
+  // subsequent rounds — otherwise founders who joined after the cutoff (e.g.
+  // the league was started the same day) would all be handed byes.
+  const isFoundingRound = group.current_round === 0;
+  const cutoff = getJoinCutoff(nextEk.date, group.timezone);
+  const eligible = isFoundingRound
+    ? members.map((m) => m.user_id)
+    : members.filter((m) => new Date(m.joined_at) <= cutoff).map((m) => m.user_id);
+  const ineligible = isFoundingRound
+    ? []
+    : members.filter((m) => new Date(m.joined_at) > cutoff).map((m) => m.user_id);
 
   if (eligible.length < 2 && ineligible.length === 0) return false;
 
