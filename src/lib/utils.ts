@@ -88,3 +88,20 @@ export function formatDate(date: Date | string, timeZone = "Asia/Kolkata"): stri
     timeZone,
   });
 }
+
+/**
+ * Format a plain 'YYYY-MM-DD' calendar date (e.g. an Ekadashi date) for display
+ * without any timezone shifting — the stored date is the date we show, so it
+ * reads the same (e.g. "Jun 25") for every viewer regardless of their zone.
+ */
+export function formatDateStr(dateStr: string): string {
+  const [y, m, d] = dateStr.split("-").map((n) => parseInt(n, 10));
+  if (!y || !m || !d) return dateStr;
+  return new Date(Date.UTC(y, m - 1, d)).toLocaleDateString("en-US", {
+    weekday: "short",
+    month: "short",
+    day: "numeric",
+    year: "numeric",
+    timeZone: "UTC",
+  });
+}

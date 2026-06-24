@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { cn, formatDate } from "@/lib/utils";
+import { cn, formatDateStr } from "@/lib/utils";
 import type { MatchStatus } from "@/lib/supabase/types";
 
 export interface MatchView {
@@ -15,10 +15,10 @@ export interface MatchView {
 export function Bracket({
   matches,
   currentUserId,
-  timeZone = "Asia/Kolkata",
 }: {
   matches: MatchView[];
   currentUserId: string;
+  /** @deprecated dates are shown as stored, no timezone conversion. */
   timeZone?: string;
 }) {
   // One column per Ekadashi, most recent on the right.
@@ -33,7 +33,7 @@ export function Bracket({
           return (
             <div key={r} className="flex flex-col gap-3 min-w-[220px]">
               <h3 className="text-xs uppercase tracking-wider text-muted px-1">
-                {ekDate ? formatDate(new Date(ekDate + "T00:00:00"), timeZone) : `Round ${r}`}
+                {ekDate ? formatDateStr(ekDate) : `Round ${r}`}
               </h3>
               <div className="flex flex-col gap-3">
                 {roundMatches.map((m) => (

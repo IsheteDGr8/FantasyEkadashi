@@ -8,8 +8,8 @@ import { Card, CardBody, Badge } from "@/components/ui";
 import { ScreenTimeSubmit } from "@/components/ScreenTimeSubmit";
 import { DisputeForm } from "@/components/DisputeForm";
 import { AdminResolveForm } from "@/components/AdminResolveForm";
-import { formatDate, formatMinutes } from "@/lib/utils";
-import { getSubmissionWindow } from "@/lib/ekadashi";
+import { formatDateStr, formatMinutes } from "@/lib/utils";
+import { getSubmissionWindow, ekadashiDateToInstant } from "@/lib/ekadashi";
 import { SetupRequiredScreen, supabaseConfigured } from "@/components/SetupRequired";
 import type { Submission } from "@/lib/supabase/types";
 
@@ -60,7 +60,10 @@ export default async function MatchPage({ params }: PageProps) {
   const isAdmin = group.admin_id === userId;
   const isBye = !match.player_b;
 
-  const win = getSubmissionWindow(new Date(match.ekadashi_date + "T00:00:00"), group.timezone);
+  const win = getSubmissionWindow(
+    ekadashiDateToInstant(match.ekadashi_date, group.timezone),
+    group.timezone,
+  );
   const now = new Date();
   const submissionOpen = now >= win.opensAt && now <= win.closesAt;
   const submissionClosed = now > win.closesAt;
@@ -83,7 +86,7 @@ export default async function MatchPage({ params }: PageProps) {
             <p className="mt-1 text-sm text-muted">
               Ekadashi:{" "}
               <span className="text-foreground">
-                {formatDate(new Date(match.ekadashi_date + "T00:00:00"), group.timezone)}
+                {formatDateStr(match.ekadashi_date)}
               </span>
             </p>
           </div>

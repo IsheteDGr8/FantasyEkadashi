@@ -31,31 +31,53 @@ function minutesToField(n: number): string {
 }
 
 /**
- * From OCR text, find the minutes next to a given category label.
- * Handles "Social Networking 1h 23m", "Entertainment  45m", etc.
+ * Parse a duration out of a piece of OCR text into total minutes.
+ * Handles "1h 23m 45s", "23m 5s", "45s", "2 hr 5 min", "1:23", "1:23:45".
+ * Returns null if no time-like value is present.
+ */
+function durationToMinutes(text: string): number | null {
+  if (!text) return null;
+  const h = text.match(/(\d+)\s*h(?:ou?rs?|r)?\b/i);
+  const m = text.match(/(\d+)\s*m(?:in(?:ute)?s?)?\b/i);
+  const s = text.match(/(\d+)\s*s(?:ec(?:ond)?s?)?\b/i);
+  if (h || m || s) {
+    const hours = h ? parseInt(h[1], 10) : 0;
+    const mins = m ? parseInt(m[1], 10) : 0;
+    const secs = s ? parseInt(s[1], 10) : 0;
+    const total = Math.round(hours * 60 + mins + secs / 60);
+    return total <= 1440 ? total : null;
+  }
+  const colon = text.match(/\b(\d{1,2}):(\d{2})(?::(\d{2}))?\b/);
+  if (colon) {
+    const a = parseInt(colon[1], 10);
+    const b = parseInt(colon[2], 10);
+    if (colon[3]) {
+      return Math.round(a * 60 + b + parseInt(colon[3], 10) / 60); // h:m:s
+    }
+    return a * 60 + b; // h:mm
+  }
+  return null;
+}
+
+/**
+ * From OCR text, find the minutes for a given category label. The time may be
+ * on the same line as the label or wrap onto the next line, so we try both.
  */
 function extractCategory(text: string, aliases: string[]): number | null {
-  const lines = text.split(/\n+/);
-  for (const alias of aliases) {
-    for (const line of lines) {
-      const low = line.toLowerCase();
+  const lines = text
+    .split(/\r?\n/)
+    .map((l) => l.trim())
+    .filter(Boolean);
+  for (let i = 0; i < lines.length; i++) {
+    const low = lines[i].toLowerCase();
+    for (const alias of aliases) {
       const idx = low.indexOf(alias);
       if (idx === -1) continue;
-      const after = line.slice(idx + alias.length);
-      const m =
-        after.match(/(\d{1,2})\s*h(?:ours?)?\s*(\d{1,2})?\s*m?/i) ||
-        after.match(/(\d{1,3})\s*m(?:in)?/i) ||
-        after.match(/(\d{1,2}):(\d{2})/);
-      if (m) {
-        if (/h/i.test(m[0]) || m[0].includes(":")) {
-          const h = parseInt(m[1], 10);
-          const mins = m[2] ? parseInt(m[2], 10) : 0;
-          if (mins < 60) return h * 60 + mins;
-        } else {
-          const v = parseInt(m[1], 10);
-          if (v < 1440) return v;
-        }
-      }
+      const after = lines[i].slice(idx + alias.length);
+      const here = durationToMinutes(after);
+      if (here !== null) return here;
+      const next = i + 1 < lines.length ? durationToMinutes(lines[i + 1]) : null;
+      if (next !== null) return next;
     }
   }
   return null;

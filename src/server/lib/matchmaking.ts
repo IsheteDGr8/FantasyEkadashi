@@ -1,7 +1,8 @@
 import "server-only";
 import { createAdminClient } from "@/lib/supabase/admin";
 import {
-  getNextEkadashi,
+  getNextEkadashiDateStr,
+  ekadashiDateToInstant,
   getMatchupGenerationTime,
   getJoinCutoff,
 } from "@/lib/ekadashi";
@@ -29,11 +30,10 @@ export async function generateMatchupsForGroup(groupId: string): Promise<boolean
   if (!group || group.status !== "active") return false;
 
   const now = new Date();
-  const nextEk = getNextEkadashi(now, group.timezone, true);
-  const matchupTime = getMatchupGenerationTime(nextEk.date, group.timezone);
+  const { dateStr: ekDateStr } = getNextEkadashiDateStr(now);
+  const ekInstant = ekadashiDateToInstant(ekDateStr, group.timezone);
+  const matchupTime = getMatchupGenerationTime(ekInstant, group.timezone);
   if (now < matchupTime) return false; // too early to set matchups
-
-  const ekDateStr = nextEk.date.toISOString().slice(0, 10);
 
   const { data: existing } = await admin
     .from("matches")
@@ -54,7 +54,7 @@ export async function generateMatchupsForGroup(groupId: string): Promise<boolean
   // subsequent rounds — otherwise founders who joined after the cutoff (e.g.
   // the league was started the same day) would all be handed byes.
   const isFoundingRound = group.current_round === 0;
-  const cutoff = getJoinCutoff(nextEk.date, group.timezone);
+  const cutoff = getJoinCutoff(ekInstant, group.timezone);
   const eligible = isFoundingRound
     ? members.map((m) => m.user_id)
     : members.filter((m) => new Date(m.joined_at) <= cutoff).map((m) => m.user_id);

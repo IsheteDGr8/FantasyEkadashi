@@ -16,10 +16,14 @@
  */
 
 import SunCalc from "suncalc";
-import { fromZonedTime, toZonedTime } from "date-fns-tz";
+import { fromZonedTime, toZonedTime, formatInTimeZone } from "date-fns-tz";
 import { addDays } from "date-fns";
 
 export const DEFAULT_TIMEZONE = "Asia/Kolkata";
+
+/** India is the canonical reference for the Ekadashi calendar date, so every
+ *  group/timezone agrees on which calendar date an Ekadashi falls on. */
+export const CANONICAL_TIMEZONE = "Asia/Kolkata";
 
 export type Paksha = "shukla" | "krishna";
 
@@ -193,6 +197,27 @@ export function getSubmissionWindow(
 /** Parse a 'YYYY-MM-DD' DB date into a UTC instant at local midnight. */
 export function parseEkadashiDate(dateStr: string): Date {
   return new Date(dateStr + "T00:00:00Z");
+}
+
+/**
+ * The next Ekadashi as a canonical calendar-date string ('YYYY-MM-DD'),
+ * computed in India time. Use this everywhere the Ekadashi *date* is stored or
+ * shown so all timezones agree on the same date (e.g. always "2026-06-25").
+ */
+export function getNextEkadashiDateStr(
+  from: Date = new Date(),
+  canonicalTimeZone: string = CANONICAL_TIMEZONE,
+): { dateStr: string; paksha: Paksha } {
+  const ek = getNextEkadashi(from, canonicalTimeZone, true);
+  return {
+    dateStr: formatInTimeZone(ek.date, canonicalTimeZone, "yyyy-MM-dd"),
+    paksha: ek.paksha,
+  };
+}
+
+/** Midnight (00:00) of a 'YYYY-MM-DD' Ekadashi date in the given timezone. */
+export function ekadashiDateToInstant(dateStr: string, timeZone: string): Date {
+  return fromZonedTime(`${dateStr}T00:00:00`, timeZone);
 }
 
 /**

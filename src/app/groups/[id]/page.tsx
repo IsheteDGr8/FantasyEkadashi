@@ -5,7 +5,8 @@ import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { getCurrentProfile } from "@/lib/auth";
 import {
-  getNextEkadashi,
+  getNextEkadashiDateStr,
+  ekadashiDateToInstant,
   getMatchupGenerationTime,
   getJoinCutoff,
 } from "@/lib/ekadashi";
@@ -22,7 +23,7 @@ import {
   removeMember,
   deleteGroup,
 } from "@/server/actions/groups";
-import { formatDate, formatMinutes } from "@/lib/utils";
+import { formatDateStr, formatMinutes } from "@/lib/utils";
 import { SetupRequiredScreen, supabaseConfigured } from "@/components/SetupRequired";
 import type { Submission } from "@/lib/supabase/types";
 
@@ -89,10 +90,10 @@ export default async function GroupPage({ params, searchParams }: PageProps) {
   const memberCount = memberIds.length;
 
   // --- Next Ekadashi schedule ---
-  const nextEk = getNextEkadashi(new Date(), tz, true);
-  const nextEkStr = nextEk.date.toISOString().slice(0, 10);
-  const matchupTime = getMatchupGenerationTime(nextEk.date, tz);
-  const joinCutoff = getJoinCutoff(nextEk.date, tz);
+  const { dateStr: nextEkStr } = getNextEkadashiDateStr(new Date());
+  const nextEkInstant = ekadashiDateToInstant(nextEkStr, tz);
+  const matchupTime = getMatchupGenerationTime(nextEkInstant, tz);
+  const joinCutoff = getJoinCutoff(nextEkInstant, tz);
   const matchupsSetForNext = (matches ?? []).some((m) => m.ekadashi_date === nextEkStr);
   const fmtDT = (d: Date) =>
     d.toLocaleString("en-US", {
@@ -261,7 +262,7 @@ export default async function GroupPage({ params, searchParams }: PageProps) {
             <p className="text-xs uppercase tracking-wider text-muted flex items-center gap-2">
               <Clock size={14} /> Next Ekadashi
             </p>
-            <p className="text-xl font-semibold">{formatDate(nextEk.date, tz)}</p>
+            <p className="text-xl font-semibold">{formatDateStr(nextEkStr)}</p>
             {matchupsSetForNext ? (
               <p className="text-sm text-success">Matchups are set for this Ekadashi.</p>
             ) : (
@@ -324,7 +325,7 @@ export default async function GroupPage({ params, searchParams }: PageProps) {
                       : "border-border text-muted hover:text-foreground"
                   }`}
                 >
-                  {formatDate(new Date(d + "T00:00:00"), tz)}
+                  {formatDateStr(d)}
                 </Link>
               ))}
             </div>
