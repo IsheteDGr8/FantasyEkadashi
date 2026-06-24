@@ -24,9 +24,7 @@ export default function Home() {
         <h1 className="mt-6 text-4xl sm:text-6xl font-semibold tracking-tight leading-tight">
           Less screen time.
           <br />
-          <span className="bg-gradient-to-r from-accent via-amber-300 to-accent-2 bg-clip-text text-transparent">
-            More wins.
-          </span>
+          <span className="fe-gradient-text">More wins.</span>
         </h1>
         <p className="mx-auto mt-6 max-w-xl text-lg text-foreground/70">
           Join a group. On every Ekadashi, you&apos;re paired with another player.

@@ -48,7 +48,7 @@ export async function Nav() {
               </NavLink>
               <Link
                 href="/sign-in"
-                className="ml-1 inline-flex shrink-0 items-center whitespace-nowrap rounded-full bg-accent px-4 py-1.5 font-medium text-accent-foreground transition hover:opacity-90"
+                className="fe-shine fe-press ml-1 inline-flex shrink-0 items-center whitespace-nowrap rounded-full bg-[linear-gradient(110deg,var(--accent)_0%,var(--accent-3)_50%,var(--accent-2)_100%)] bg-[length:200%_100%] px-4 py-1.5 font-medium text-white shadow-md shadow-accent/30 transition-[background-position,box-shadow] duration-500 hover:[background-position:100%_0]"
               >
                 Sign in
               </Link>

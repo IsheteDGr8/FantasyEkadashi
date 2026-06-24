@@ -69,9 +69,7 @@ export default function LearnPage() {
         </div>
         <h1 className="mt-8 text-4xl sm:text-5xl font-semibold tracking-tight">
           What is{" "}
-          <span className="bg-gradient-to-r from-accent via-amber-300 to-accent-2 bg-clip-text text-transparent">
-            Ekadashi
-          </span>
+          <span className="fe-gradient-text">Ekadashi</span>
           ?
         </h1>
         <p className="mx-auto mt-5 max-w-xl text-lg text-foreground/70">

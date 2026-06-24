@@ -5,11 +5,18 @@ type ButtonVariant = "primary" | "secondary" | "ghost" | "danger";
 type ButtonSize = "sm" | "md" | "lg";
 
 const buttonBase =
-  "inline-flex items-center justify-center gap-2 rounded-full font-medium transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/60 disabled:opacity-50 disabled:cursor-not-allowed select-none whitespace-nowrap";
+  "fe-press inline-flex items-center justify-center gap-2 rounded-full font-medium transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/60 focus-visible:ring-offset-2 focus-visible:ring-offset-background disabled:opacity-50 disabled:cursor-not-allowed select-none whitespace-nowrap";
 
 const buttonVariants: Record<ButtonVariant, string> = {
-  primary: "bg-accent text-accent-foreground hover:opacity-90 shadow-md shadow-accent/20",
-  secondary: "bg-surface text-foreground border border-border hover:bg-surface-2",
+  primary:
+    "fe-shine relative text-white shadow-lg shadow-accent/30 " +
+    "bg-[linear-gradient(110deg,var(--accent)_0%,var(--accent-3)_48%,var(--accent-2)_100%)] " +
+    "bg-[length:200%_100%] [background-position:0%_0] " +
+    "transition-[background-position,box-shadow,transform] duration-500 " +
+    "hover:[background-position:100%_0] hover:shadow-xl hover:shadow-accent/40",
+  secondary:
+    "fe-shine border border-border bg-surface/60 backdrop-blur text-foreground " +
+    "hover:bg-surface-2 hover:border-accent/40",
   ghost: "text-foreground/80 hover:text-foreground hover:bg-surface",
   danger: "bg-danger/15 text-danger border border-danger/30 hover:bg-danger/25",
 };
@@ -38,11 +45,16 @@ export const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
   },
 );
 
-export function Card({ className, ...props }: React.HTMLAttributes<HTMLDivElement>) {
+export function Card({
+  className,
+  interactive = true,
+  ...props
+}: React.HTMLAttributes<HTMLDivElement> & { interactive?: boolean }) {
   return (
     <div
       className={cn(
-        "rounded-2xl border border-border bg-surface/70 backdrop-blur-sm shadow-xl shadow-black/5",
+        "rounded-2xl border border-border bg-surface/70 backdrop-blur-md shadow-xl shadow-black/30",
+        interactive && "fe-ring fe-lift hover:shadow-2xl hover:shadow-accent/10",
         className,
       )}
       {...props}
@@ -58,7 +70,9 @@ export function Input({ className, ...props }: React.InputHTMLAttributes<HTMLInp
   return (
     <input
       className={cn(
-        "h-11 w-full rounded-xl border border-border bg-surface-2 px-4 text-foreground placeholder:text-muted focus:outline-none focus:ring-2 focus:ring-accent/60",
+        "h-11 w-full rounded-xl border border-border bg-surface-2/80 px-4 text-foreground placeholder:text-muted transition",
+        "focus:outline-none focus:border-accent/60 focus:ring-2 focus:ring-accent/40",
+        "focus:shadow-[0_0_0_4px_color-mix(in_srgb,var(--accent)_14%,transparent)]",
         className,
       )}
       {...props}

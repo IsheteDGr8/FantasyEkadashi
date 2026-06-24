@@ -48,7 +48,7 @@ export function MoonPhase({
     >
       <span
         className="absolute inset-0 rounded-full"
-        style={{ background: "#0b0a14", transform: `translateX(${offset}%)` }}
+        style={{ background: "var(--background)", transform: `translateX(${offset}%)` }}
       />
       <span className="absolute inset-0 rounded-full ring-1 ring-white/10" />
     </span>

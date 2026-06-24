@@ -3,6 +3,7 @@ import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { AuthForm } from "@/components/AuthForm";
 import { Card, CardBody } from "@/components/ui";
+import { MoonPhase } from "@/components/MoonPhase";
 import { SetupRequiredScreen, supabaseConfigured } from "@/components/SetupRequired";
 
 export const metadata = { title: "Sign in" };
@@ -26,13 +27,18 @@ export default async function SignInPage({
   const signUpHref = dest ? `/sign-up?next=${encodeURIComponent(dest)}` : "/sign-up";
 
   return (
-    <div className="mx-auto max-w-md px-4 sm:px-6 pt-12 sm:pt-20">
+    <div className="mx-auto max-w-md px-4 sm:px-6 pt-12 sm:pt-16">
+      <div className="mb-6 flex justify-center fe-float">
+        <MoonPhase pos={0.5} size={68} glow />
+      </div>
       <Card>
         <CardBody className="space-y-6">
-          <div>
-            <h1 className="text-2xl font-semibold">Sign in</h1>
-            <p className="mt-1 text-sm text-muted">
-              Use your phone number and password.
+          <div className="text-center">
+            <h1 className="text-3xl font-semibold tracking-tight">
+              Welcome <span className="fe-gradient-text">back</span>
+            </h1>
+            <p className="mt-1.5 text-sm text-muted">
+              Sign in with your phone number and password.
             </p>
           </div>
           <AuthForm mode="sign-in" next={dest} />

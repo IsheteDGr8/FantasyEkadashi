@@ -3,6 +3,7 @@ import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { AuthForm } from "@/components/AuthForm";
 import { Card, CardBody } from "@/components/ui";
+import { MoonPhase } from "@/components/MoonPhase";
 import { SetupRequiredScreen, supabaseConfigured } from "@/components/SetupRequired";
 
 export const metadata = { title: "Create account" };
@@ -26,12 +27,17 @@ export default async function SignUpPage({
   const signInHref = dest ? `/sign-in?next=${encodeURIComponent(dest)}` : "/sign-in";
 
   return (
-    <div className="mx-auto max-w-md px-4 sm:px-6 pt-12 sm:pt-20">
+    <div className="mx-auto max-w-md px-4 sm:px-6 pt-12 sm:pt-16">
+      <div className="mb-6 flex justify-center fe-float">
+        <MoonPhase pos={0.18} size={68} glow />
+      </div>
       <Card>
         <CardBody className="space-y-6">
-          <div>
-            <h1 className="text-2xl font-semibold">Create your account</h1>
-            <p className="mt-1 text-sm text-muted">
+          <div className="text-center">
+            <h1 className="text-3xl font-semibold tracking-tight">
+              Join the <span className="fe-gradient-text">constellation</span>
+            </h1>
+            <p className="mt-1.5 text-sm text-muted">
               Your name is shown to other players. Your phone number is private —
               it&apos;s only your login. No SMS is ever sent.
             </p>
