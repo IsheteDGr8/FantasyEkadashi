@@ -4,9 +4,10 @@ import { Plus, Users, Trophy, Calendar } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
 import { getCurrentProfile } from "@/lib/auth";
 import { getNextEkadashiInZone } from "@/lib/ekadashi";
-import { formatDate } from "@/lib/utils";
+import { formatDate, formatDateStr } from "@/lib/utils";
 import { Card, CardBody, Button, Badge } from "@/components/ui";
 import { CountdownToEkadashi } from "@/components/CountdownToEkadashi";
+import { RealtimeRefresh } from "@/components/RealtimeRefresh";
 import { SetupRequiredScreen, supabaseConfigured } from "@/components/SetupRequired";
 import { createAdminClient } from "@/lib/supabase/admin";
 
@@ -45,6 +46,7 @@ export default async function DashboardPage() {
 
   return (
     <div className="mx-auto max-w-5xl px-4 sm:px-6 py-8 space-y-8">
+      <RealtimeRefresh channelName={`dash-${profile.id}`} userId={profile.id} />
       <header className="flex items-end justify-between gap-4 flex-wrap">
         <div>
           <p className="text-sm text-muted">Welcome back,</p>
@@ -100,7 +102,7 @@ export default async function DashboardPage() {
                     <p className="font-medium">
                       Ekadashi:{" "}
                       <span className="text-accent">
-                        {formatDate(new Date(m.ekadashi_date + "T00:00:00"), tz)}
+                        {formatDateStr(m.ekadashi_date)}
                       </span>
                     </p>
                   </div>

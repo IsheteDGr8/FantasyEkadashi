@@ -278,3 +278,33 @@ create policy "delete own screenshots"
         bucket_id = 'screenshots'
         and (storage.foldername(name))[1] = auth.uid()::text
     );
+
+-- ============================================================================
+-- Realtime (live updates)
+-- Add the app tables to Supabase's realtime publication so the UI updates live
+-- (leagues starting, matchups, submissions) without manual refresh. RLS still
+-- governs which change events each user receives. Idempotent: safe to re-run.
+-- ============================================================================
+do $$
+begin
+    alter publication supabase_realtime add table public.groups;
+exception when duplicate_object then null;
+end $$;
+
+do $$
+begin
+    alter publication supabase_realtime add table public.group_members;
+exception when duplicate_object then null;
+end $$;
+
+do $$
+begin
+    alter publication supabase_realtime add table public.matches;
+exception when duplicate_object then null;
+end $$;
+
+do $$
+begin
+    alter publication supabase_realtime add table public.submissions;
+exception when duplicate_object then null;
+end $$;

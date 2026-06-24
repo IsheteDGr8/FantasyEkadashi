@@ -6,6 +6,7 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import { getCurrentProfile } from "@/lib/auth";
 import { Card, CardBody, Badge } from "@/components/ui";
 import { ScreenTimeSubmit } from "@/components/ScreenTimeSubmit";
+import { RealtimeRefresh } from "@/components/RealtimeRefresh";
 import { DisputeForm } from "@/components/DisputeForm";
 import { AdminResolveForm } from "@/components/AdminResolveForm";
 import { formatDateStr, formatMinutes } from "@/lib/utils";
@@ -76,6 +77,7 @@ export default async function MatchPage({ params }: PageProps) {
 
   return (
     <div className="mx-auto max-w-3xl px-4 sm:px-6 py-8 space-y-6">
+      <RealtimeRefresh channelName={`match-${id}`} matchId={id} />
       <div>
         <Link href={`/groups/${group.id}`} className="text-sm text-muted hover:text-foreground">
           ← {group.name}
