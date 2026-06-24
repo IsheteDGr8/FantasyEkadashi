@@ -4,6 +4,7 @@ import { getNextEkadashiInZone } from "@/lib/ekadashi";
 import { formatDate } from "@/lib/utils";
 import { Button, Card, CardBody } from "@/components/ui";
 import { CountdownToEkadashi } from "@/components/CountdownToEkadashi";
+import { MoonPhase } from "@/components/MoonPhase";
 
 const DISPLAY_TZ = "America/Los_Angeles";
 
@@ -12,8 +13,11 @@ export default function Home() {
 
   return (
     <div className="mx-auto max-w-5xl px-4 sm:px-6">
-      <section className="pt-12 sm:pt-20 pb-10 text-center">
-        <div className="inline-flex items-center gap-2 rounded-full border border-border bg-surface/60 px-3 py-1 text-xs text-muted">
+      <section className="relative pt-12 sm:pt-20 pb-10 text-center">
+        <div className="flex justify-center fe-float">
+          <MoonPhase pos={0.5} size={84} glow />
+        </div>
+        <div className="mt-7 inline-flex items-center gap-2 rounded-full border border-border bg-surface/60 px-3 py-1 text-xs text-muted">
           <Moon size={12} className="text-accent" />
           A fantasy bracket for people who&apos;d rather put their phone down
         </div>
@@ -29,9 +33,13 @@ export default function Home() {
           Whoever logs the least time on social, games, entertainment, and
           creativity advances in the bracket.
         </p>
-        <div className="mt-8 flex flex-col sm:flex-row gap-3 items-center justify-center">
-          <Link href="/sign-up"><Button size="lg">Create account</Button></Link>
-          <Link href="/groups/join"><Button size="lg" variant="secondary">Join with a code</Button></Link>
+        <div className="mt-8 flex w-full flex-col items-stretch justify-center gap-3 sm:flex-row sm:items-center">
+          <Link href="/sign-up" className="contents">
+            <Button size="lg" className="w-full sm:w-auto">Create account</Button>
+          </Link>
+          <Link href="/groups/join" className="contents">
+            <Button size="lg" variant="secondary" className="w-full sm:w-auto">Join with a code</Button>
+          </Link>
         </div>
         <p className="mt-4 text-sm text-muted">
           New to Ekadashi?{" "}

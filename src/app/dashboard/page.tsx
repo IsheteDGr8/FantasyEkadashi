@@ -47,21 +47,23 @@ export default async function DashboardPage() {
   return (
     <div className="mx-auto max-w-5xl px-4 sm:px-6 py-8 space-y-8">
       <RealtimeRefresh channelName={`dash-${profile.id}`} userId={profile.id} />
-      <header className="flex items-end justify-between gap-4 flex-wrap">
-        <div>
+      <header className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+        <div className="min-w-0">
           <p className="text-sm text-muted">Welcome back,</p>
-          <h1 className="text-3xl font-semibold">{profile.display_name}</h1>
+          <h1 className="truncate text-2xl font-semibold sm:text-3xl">{profile.display_name}</h1>
           <Link href="/profile" className="text-sm text-accent hover:underline">
             Edit profile
           </Link>
         </div>
-        <div className="flex gap-2">
-          <Link href="/groups/join">
-            <Button variant="secondary"><Users size={16} /> Join group</Button>
+        <div className="grid grid-cols-2 gap-2 sm:flex sm:shrink-0">
+          <Link href="/groups/join" className="contents">
+            <Button variant="secondary" className="w-full sm:w-auto">
+              <Users size={16} /> Join group
+            </Button>
           </Link>
           {profile.is_admin && (
-            <Link href="/groups/new">
-              <Button><Plus size={16} /> New group</Button>
+            <Link href="/groups/new" className="contents">
+              <Button className="w-full sm:w-auto"><Plus size={16} /> New group</Button>
             </Link>
           )}
         </div>

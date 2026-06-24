@@ -7,11 +7,19 @@ import { SetupRequiredScreen, supabaseConfigured } from "@/components/SetupRequi
 
 export const metadata = { title: "Join group" };
 
-export default async function JoinGroupPage() {
+export default async function JoinGroupPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ code?: string }>;
+}) {
   if (!supabaseConfigured()) return <SetupRequiredScreen />;
+  const { code } = await searchParams;
   const supabase = await createClient();
   const { data } = await supabase.auth.getUser();
-  if (!data.user) redirect("/sign-in");
+  if (!data.user) {
+    const here = code ? `/groups/join?code=${encodeURIComponent(code)}` : "/groups/join";
+    redirect(`/sign-up?next=${encodeURIComponent(here)}`);
+  }
 
   return (
     <div className="mx-auto max-w-md px-4 sm:px-6 py-12">
@@ -32,6 +40,7 @@ export default async function JoinGroupPage() {
                 required
                 minLength={4}
                 maxLength={12}
+                defaultValue={code?.toUpperCase()}
                 autoCapitalize="characters"
                 autoComplete="off"
                 className="uppercase tracking-[0.3em] font-mono text-center text-lg"

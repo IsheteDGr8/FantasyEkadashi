@@ -7,11 +7,23 @@ import { SetupRequiredScreen, supabaseConfigured } from "@/components/SetupRequi
 
 export const metadata = { title: "Create account" };
 
-export default async function SignUpPage() {
+function safeNext(next?: string): string | undefined {
+  return next && next.startsWith("/") ? next : undefined;
+}
+
+export default async function SignUpPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ next?: string }>;
+}) {
   if (!supabaseConfigured()) return <SetupRequiredScreen />;
+  const { next } = await searchParams;
+  const dest = safeNext(next);
   const supabase = await createClient();
   const { data } = await supabase.auth.getUser();
-  if (data.user) redirect("/dashboard");
+  if (data.user) redirect(dest ?? "/dashboard");
+
+  const signInHref = dest ? `/sign-in?next=${encodeURIComponent(dest)}` : "/sign-in";
 
   return (
     <div className="mx-auto max-w-md px-4 sm:px-6 pt-12 sm:pt-20">
@@ -24,10 +36,10 @@ export default async function SignUpPage() {
               it&apos;s only your login. No SMS is ever sent.
             </p>
           </div>
-          <AuthForm mode="sign-up" />
+          <AuthForm mode="sign-up" next={dest} />
           <p className="text-sm text-muted text-center">
             Already have an account?{" "}
-            <Link href="/sign-in" className="text-accent hover:underline">
+            <Link href={signInHref} className="text-accent hover:underline">
               Sign in
             </Link>
           </p>

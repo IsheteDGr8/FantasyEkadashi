@@ -5,7 +5,13 @@ import { useRouter } from "next/navigation";
 import { Button, Input, Label } from "@/components/ui";
 import { signIn, signUp } from "@/server/actions/auth";
 
-export function AuthForm({ mode }: { mode: "sign-in" | "sign-up" }) {
+export function AuthForm({
+  mode,
+  next,
+}: {
+  mode: "sign-in" | "sign-up";
+  next?: string;
+}) {
   const router = useRouter();
   const [error, setError] = useState<string | null>(null);
   const [pending, startTransition] = useTransition();
@@ -21,8 +27,9 @@ export function AuthForm({ mode }: { mode: "sign-in" | "sign-up" }) {
         setError(result.error);
         return;
       }
+      const dest = next && next.startsWith("/") ? next : "/dashboard";
       router.refresh();
-      router.push("/dashboard");
+      router.push(dest);
     });
   }
 

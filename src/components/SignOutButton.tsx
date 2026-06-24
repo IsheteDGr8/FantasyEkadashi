@@ -1,6 +1,7 @@
 "use client";
 
 import { useFormStatus } from "react-dom";
+import { LogOut } from "lucide-react";
 import { signOutAction } from "@/server/actions/auth";
 
 function SubmitButton() {
@@ -9,9 +10,12 @@ function SubmitButton() {
     <button
       type="submit"
       disabled={pending}
-      className="px-3 py-1.5 rounded-full text-foreground/70 hover:text-foreground hover:bg-surface transition disabled:opacity-50"
+      aria-label="Sign out"
+      title="Sign out"
+      className="inline-flex shrink-0 items-center gap-1.5 whitespace-nowrap rounded-full px-2.5 py-1.5 text-foreground/70 transition hover:bg-surface hover:text-foreground disabled:opacity-50"
     >
-      {pending ? "…" : "Sign out"}
+      <LogOut size={16} />
+      <span className="hidden sm:inline">{pending ? "…" : "Sign out"}</span>
     </button>
   );
 }

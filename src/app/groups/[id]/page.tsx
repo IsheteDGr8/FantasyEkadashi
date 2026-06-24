@@ -209,8 +209,8 @@ export default async function GroupPage({ params, searchParams }: PageProps) {
   return (
     <div className="mx-auto max-w-5xl px-4 sm:px-6 py-8 space-y-8">
       <RealtimeRefresh channelName={`group-${id}`} groupId={id} matchIds={matchIds} />
-      <header className="flex flex-wrap items-end justify-between gap-3">
-        <div>
+      <header className="flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-end sm:justify-between">
+        <div className="min-w-0">
           <p className="text-xs uppercase tracking-wider text-muted">League</p>
           <GroupTitle groupId={group.id} name={group.name} canEdit={isAdmin} />
           <div className="mt-2 flex items-center gap-2">
