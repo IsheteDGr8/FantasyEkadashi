@@ -325,8 +325,8 @@ export function ScreenTimeSubmit({
       </div>
       {categoryInput(
         "whatsapp_min",
-        "WhatsApp (subtracted from Social)",
-        "Optional. iOS counts WhatsApp under Social; enter its time to exclude it.",
+        "WhatsApp & Messages (subtracted from Social)",
+        "Optional. iOS files these under Social — add your WhatsApp and Messages time together and we'll subtract the total.",
       )}
 
       <div className="flex items-center justify-between rounded-xl bg-surface-2 border border-border px-4 py-3">

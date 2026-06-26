@@ -1,9 +1,12 @@
 /**
  * The competed screen-time categories. These mirror the built-in iOS Screen
  * Time categories so players can read them straight off the "Show Categories"
- * view. WhatsApp is filed by iOS under "Social", so we track it separately and
- * subtract it (the user excludes WhatsApp, Messages, FaceTime — the latter two
- * aren't in any competed category, so they're excluded automatically).
+ * view. WhatsApp and Messages are filed by iOS under "Social", so we track
+ * their combined time separately and subtract it (FaceTime isn't in any
+ * competed category, so it's excluded automatically).
+ *
+ * Note: the `whatsapp_min` field/column represents the combined WhatsApp +
+ * Messages minutes that get subtracted from Social.
  */
 
 export interface CategoryDef {

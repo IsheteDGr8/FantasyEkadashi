@@ -19,9 +19,9 @@ export default function AboutPage() {
           <h2 className="text-xl font-semibold text-foreground">Categories &amp; scoring</h2>
           <p>
             We score the sum of those four iOS Screen Time categories. WhatsApp
-            sits inside &ldquo;Social&rdquo; on iOS, so you can enter its time
-            separately and we subtract it. Messages and FaceTime aren&apos;t in
-            any competed category, so they never count.
+            and Messages sit inside &ldquo;Social&rdquo; on iOS, so you can enter
+            their combined time separately and we subtract it. FaceTime
+            isn&apos;t in any competed category, so it never counts.
           </p>
           <h2 className="text-xl font-semibold text-foreground">How screen time is verified</h2>
           <p>

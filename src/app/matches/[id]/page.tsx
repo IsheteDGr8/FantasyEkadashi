@@ -242,7 +242,7 @@ function PlayerCard({
           <div className="space-y-2">
             <p className="text-2xl font-semibold font-mono tabular-nums">{formatMinutes(sub.total_min)}</p>
             <ul className="text-xs text-muted space-y-0.5">
-              <li>Social: {formatMinutes(Math.max(0, sub.social_min - sub.whatsapp_min))} {sub.whatsapp_min > 0 && <span>(−{formatMinutes(sub.whatsapp_min)} WhatsApp)</span>}</li>
+              <li>Social: {formatMinutes(Math.max(0, sub.social_min - sub.whatsapp_min))} {sub.whatsapp_min > 0 && <span>(−{formatMinutes(sub.whatsapp_min)} WhatsApp &amp; Messages)</span>}</li>
               <li>Games: {formatMinutes(sub.games_min)}</li>
               <li>Entertainment: {formatMinutes(sub.entertainment_min)}</li>
               <li>Creativity: {formatMinutes(sub.creativity_min)}</li>
