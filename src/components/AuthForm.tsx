@@ -2,6 +2,7 @@
 
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
+import { MailCheck } from "lucide-react";
 import { Button, Input, Label } from "@/components/ui";
 import { signIn, signUp } from "@/server/actions/auth";
 
@@ -14,6 +15,7 @@ export function AuthForm({
 }) {
   const router = useRouter();
   const [error, setError] = useState<string | null>(null);
+  const [sentTo, setSentTo] = useState<string | null>(null);
   const [pending, startTransition] = useTransition();
   const isSignUp = mode === "sign-up";
 
@@ -21,16 +23,40 @@ export function AuthForm({
     e.preventDefault();
     setError(null);
     const formData = new FormData(e.currentTarget);
+    const email = String(formData.get("email") ?? "");
     startTransition(async () => {
       const result = isSignUp ? await signUp(formData) : await signIn(formData);
       if (result && "error" in result) {
         setError(result.error);
         return;
       }
+      if (result && "needsConfirmation" in result && result.needsConfirmation) {
+        setSentTo(email);
+        return;
+      }
       const dest = next && next.startsWith("/") ? next : "/dashboard";
       router.refresh();
       router.push(dest);
     });
+  }
+
+  if (sentTo) {
+    return (
+      <div className="space-y-3 text-center">
+        <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-success/15 text-success">
+          <MailCheck size={22} />
+        </div>
+        <h2 className="text-lg font-semibold">Confirm your email</h2>
+        <p className="text-sm text-muted">
+          We sent a confirmation link to{" "}
+          <span className="text-foreground">{sentTo}</span>. Click it to activate
+          your account, then come back and sign in.
+        </p>
+        <p className="text-xs text-muted">
+          Didn&apos;t get it? Check spam, or wait a minute and try again.
+        </p>
+      </div>
+    );
   }
 
   return (
@@ -43,17 +69,17 @@ export function AuthForm({
         </div>
       )}
       <div className="space-y-1.5">
-        <Label htmlFor="phone">Phone number</Label>
+        <Label htmlFor="email">Email</Label>
         <Input
-          id="phone"
-          name="phone"
+          id="email"
+          name="email"
           required
-          type="tel"
-          inputMode="tel"
-          autoComplete="tel"
-          placeholder="+1 555 123 4567"
+          type="email"
+          inputMode="email"
+          autoComplete="email"
+          placeholder="you@example.com"
         />
-        {isSignUp && <p className="text-xs text-muted">Private. Used only to log you in.</p>}
+        {isSignUp && <p className="text-xs text-muted">Private. We&apos;ll send a confirmation link here.</p>}
       </div>
       <div className="space-y-1.5">
         <Label htmlFor="password">Password</Label>

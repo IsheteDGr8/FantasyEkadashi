@@ -11,6 +11,7 @@ import {
   getJoinCutoff,
 } from "@/lib/ekadashi";
 import { generateMatchupsForGroup } from "@/server/lib/matchmaking";
+import { closeDueSubmissionsForGroup } from "@/server/lib/rounds";
 import { Card, CardBody, Badge } from "@/components/ui";
 import { Bracket, type MatchView } from "@/components/Bracket";
 import { GroupTitle } from "@/components/GroupTitle";
@@ -25,6 +26,7 @@ import {
   deleteGroup,
 } from "@/server/actions/groups";
 import { formatDateStr, formatMinutes } from "@/lib/utils";
+import { CATEGORIES } from "@/lib/categories";
 import { SetupRequiredScreen, supabaseConfigured } from "@/components/SetupRequired";
 import type { Submission } from "@/lib/supabase/types";
 
@@ -53,10 +55,12 @@ export default async function GroupPage({ params, searchParams }: PageProps) {
     .single();
   if (error || !group) notFound();
 
-  // Lazily generate any due Ekadashi matchups so they appear without waiting
-  // for the daily cron (no-op if it's too early or already generated).
+  // Lazily generate any due Ekadashi matchups and close any expired submission
+  // windows so they reflect without waiting for the daily cron (both no-op if
+  // it's too early / already done).
   if (group.status === "active") {
     await generateMatchupsForGroup(id);
+    await closeDueSubmissionsForGroup(id);
   }
 
   const [{ data: members }, { data: matches }] = await Promise.all([
@@ -133,15 +137,14 @@ export default async function GroupPage({ params, searchParams }: PageProps) {
           totalMin: sub ? sub.total_min : null,
           lost,
           isMe: pid === userId,
-          breakdown: sub
-            ? {
-                social: Math.max(0, sub.social_min - sub.whatsapp_min),
-                games: sub.games_min,
-                entertainment: sub.entertainment_min,
-                creativity: sub.creativity_min,
-                whatsapp: sub.whatsapp_min,
-              }
-            : undefined,
+          noShow: sub?.no_show ?? false,
+          breakdown:
+            sub && !sub.no_show
+              ? CATEGORIES.map((c) => ({ label: c.label, min: sub[c.field] }))
+                  .filter((x) => x.min > 0)
+                  .sort((a, b) => b.min - a.min)
+                  .slice(0, 3)
+              : undefined,
         });
       }
     }

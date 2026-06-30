@@ -7,10 +7,10 @@ import { updateProfile } from "@/server/actions/profile";
 
 export function ProfileForm({
   initialName,
-  initialPhone,
+  email,
 }: {
   initialName: string;
-  initialPhone: string;
+  email: string;
 }) {
   const router = useRouter();
   const [error, setError] = useState<string | null>(null);
@@ -49,19 +49,10 @@ export function ProfileForm({
         <p className="text-xs text-muted">Shown publicly on leaderboards.</p>
       </div>
       <div className="space-y-1.5">
-        <Label htmlFor="phone">Phone number</Label>
-        <Input
-          id="phone"
-          name="phone"
-          required
-          type="tel"
-          inputMode="tel"
-          autoComplete="tel"
-          defaultValue={initialPhone}
-        />
+        <Label htmlFor="email">Email</Label>
+        <Input id="email" name="email" type="email" value={email} disabled readOnly />
         <p className="text-xs text-muted">
-          Private — this is your login. If you change it, sign in with the new
-          number next time (your password stays the same).
+          Private — this is your verified login and can&apos;t be changed here.
         </p>
       </div>
       {error && (

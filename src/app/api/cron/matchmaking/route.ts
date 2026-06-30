@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { generateDueMatchupsAll } from "@/server/lib/matchmaking";
+import { closeDueSubmissionsAll } from "@/server/lib/rounds";
 
 export const dynamic = "force-dynamic";
 
@@ -27,7 +28,8 @@ export async function GET(req: Request) {
       return NextResponse.json({ ok: true, note: "not_configured" });
     }
     const result = await generateDueMatchupsAll();
-    return NextResponse.json({ ok: true, ...result });
+    const closed = await closeDueSubmissionsAll();
+    return NextResponse.json({ ok: true, ...result, ...closed });
   } catch (e) {
     return NextResponse.json(
       { ok: false, error: e instanceof Error ? e.message : "unknown" },

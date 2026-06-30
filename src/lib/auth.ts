@@ -18,10 +18,16 @@ export async function getCurrentProfile(): Promise<Profile | null> {
   return profile ?? null;
 }
 
-/** Normalized admin phone allowlist from env (comma separated). */
-export function adminPhoneAllowlist(): string[] {
-  return (process.env.ADMIN_PHONES ?? "")
+/** Lowercased admin email allowlist from env (comma separated). */
+export function adminEmailAllowlist(): string[] {
+  return (process.env.ADMIN_EMAILS ?? "")
     .split(",")
-    .map((p) => p.replace(/\D/g, ""))
+    .map((e) => e.trim().toLowerCase())
     .filter(Boolean);
+}
+
+/** Is this email allowed to be an admin (create/own leagues)? */
+export function isAdminEmail(email: string | null | undefined): boolean {
+  if (!email) return false;
+  return adminEmailAllowlist().includes(email.trim().toLowerCase());
 }

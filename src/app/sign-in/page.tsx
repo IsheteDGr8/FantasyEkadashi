@@ -38,7 +38,7 @@ export default async function SignInPage({
               Welcome <span className="fe-gradient-text">back</span>
             </h1>
             <p className="mt-1.5 text-sm text-muted">
-              Sign in with your phone number and password.
+              Sign in with your email and password.
             </p>
           </div>
           <AuthForm mode="sign-in" next={dest} />

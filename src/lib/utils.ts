@@ -15,23 +15,15 @@ export function generateJoinCode(): string {
 }
 
 /**
- * Normalize a phone number for use as a stable login identifier. Keeps a
- * leading "+", strips everything else that isn't a digit. Returns null if
- * fewer than 7 digits remain (clearly not a phone number).
+ * Lowercase + trim an email and verify it's a plausible address. Returns null
+ * if it doesn't look like an email. Used as the login identifier.
  */
-export function normalizePhone(input: string): string | null {
+export function normalizeEmail(input: string): string | null {
   if (!input) return null;
-  const trimmed = input.trim();
-  const hasPlus = trimmed.startsWith("+");
-  const digits = trimmed.replace(/\D/g, "");
-  if (digits.length < 7 || digits.length > 15) return null;
-  return (hasPlus ? "+" : "") + digits;
-}
-
-/** Map a normalized phone to the synthetic email used by Supabase auth. */
-export function phoneToSyntheticEmail(normalizedPhone: string): string {
-  const digits = normalizedPhone.replace(/\D/g, "");
-  return `${digits}@fe.local`;
+  const email = input.trim().toLowerCase();
+  // Pragmatic check: something@something.tld, no spaces.
+  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) return null;
+  return email;
 }
 
 /**

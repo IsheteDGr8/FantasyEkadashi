@@ -13,15 +13,17 @@ export default function AboutPage() {
             Ekadashi is the eleventh day of each lunar fortnight — two per month,
             traditionally days of fasting and restraint. Fantasy Ekadashi turns
             that into a friendly bracket: on each Ekadashi you&apos;re paired with
-            another player, and whoever logs the least phone time across Social,
-            Games, Entertainment, and Creativity advances.
+            another player, and whoever logs the least phone time across the
+            counted categories advances.
           </p>
           <h2 className="text-xl font-semibold text-foreground">Categories &amp; scoring</h2>
           <p>
-            We score the sum of those four iOS Screen Time categories. WhatsApp
-            and Messages sit inside &ldquo;Social&rdquo; on iOS, so you can enter
-            their combined time separately and we subtract it. FaceTime
-            isn&apos;t in any competed category, so it never counts.
+            We score the sum of your iOS Screen Time categories — Social (every
+            social app, WhatsApp &amp; Messages included), Games, Entertainment,
+            Creativity, Health &amp; Fitness, Utilities, Shopping &amp; Food, and
+            Other. Productivity &amp; Finance, Education, Information &amp;
+            Reading, and Travel don&apos;t count. If you don&apos;t submit before
+            the window closes, you&apos;re scored a full 24 hours.
           </p>
           <h2 className="text-xl font-semibold text-foreground">How screen time is verified</h2>
           <p>
@@ -32,8 +34,8 @@ export default function AboutPage() {
           </p>
           <h2 className="text-xl font-semibold text-foreground">Free forever</h2>
           <p>
-            Built on Next.js + Supabase free tiers. No ads, no payment, no SMS
-            fees — login is phone + password, no texts sent.
+            Built on Next.js + Supabase free tiers. No ads, no payment — login is
+            a verified email + password.
           </p>
         </CardBody>
       </Card>

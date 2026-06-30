@@ -38,8 +38,8 @@ export default async function SignUpPage({
               Join the <span className="fe-gradient-text">constellation</span>
             </h1>
             <p className="mt-1.5 text-sm text-muted">
-              Your name is shown to other players. Your phone number is private —
-              it&apos;s only your login. No SMS is ever sent.
+              Your name is shown to other players. Your email is private — it&apos;s
+              only your login, and we&apos;ll send a confirmation link to verify it.
             </p>
           </div>
           <AuthForm mode="sign-up" next={dest} />

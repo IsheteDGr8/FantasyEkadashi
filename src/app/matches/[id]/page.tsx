@@ -10,6 +10,7 @@ import { RealtimeRefresh } from "@/components/RealtimeRefresh";
 import { DisputeForm } from "@/components/DisputeForm";
 import { AdminResolveForm } from "@/components/AdminResolveForm";
 import { formatDateStr, formatMinutes } from "@/lib/utils";
+import { CATEGORIES } from "@/lib/categories";
 import { getSubmissionWindow, ekadashiDateToInstant } from "@/lib/ekadashi";
 import { SetupRequiredScreen, supabaseConfigured } from "@/components/SetupRequired";
 import type { Submission } from "@/lib/supabase/types";
@@ -175,7 +176,8 @@ export default async function MatchPage({ params }: PageProps) {
                 On iOS: Settings → Screen Time → See All Activity → tap the{" "}
                 <span className="text-foreground">Ekadashi day</span> →
                 &ldquo;Show Categories&rdquo;. Screenshot it and upload (or paste
-                it); we read Social, Games, Entertainment, and Creativity.
+                it). Every category counts except Productivity &amp; Finance,
+                Education, Information &amp; Reading, and Travel.
               </p>
             </div>
             <ScreenTimeSubmit matchId={match.id} existing={mySub} />
@@ -241,14 +243,23 @@ function PlayerCard({
         {sub ? (
           <div className="space-y-2">
             <p className="text-2xl font-semibold font-mono tabular-nums">{formatMinutes(sub.total_min)}</p>
-            <ul className="text-xs text-muted space-y-0.5">
-              <li>Social: {formatMinutes(Math.max(0, sub.social_min - sub.whatsapp_min))} {sub.whatsapp_min > 0 && <span>(−{formatMinutes(sub.whatsapp_min)} WhatsApp &amp; Messages)</span>}</li>
-              <li>Games: {formatMinutes(sub.games_min)}</li>
-              <li>Entertainment: {formatMinutes(sub.entertainment_min)}</li>
-              <li>Creativity: {formatMinutes(sub.creativity_min)}</li>
-            </ul>
+            {sub.no_show ? (
+              <p className="text-xs text-danger">
+                Did not submit in time — counted as a full 24h.
+              </p>
+            ) : (
+              <ul className="text-xs text-muted space-y-0.5">
+                {CATEGORIES.map((c) =>
+                  sub[c.field] > 0 ? (
+                    <li key={c.key}>
+                      {c.label}: {formatMinutes(sub[c.field])}
+                    </li>
+                  ) : null,
+                )}
+              </ul>
+            )}
             {sub.disputed && <Badge variant="danger">disputed</Badge>}
-            {screenshotUrl && (
+            {screenshotUrl && !sub.no_show && (
               <a href={screenshotUrl} target="_blank" rel="noopener noreferrer" className="block mt-2">
                 {/* eslint-disable-next-line @next/next/no-img-element */}
                 <img src={screenshotUrl} alt="Screenshot" className="max-h-48 w-auto rounded-lg border border-border" />

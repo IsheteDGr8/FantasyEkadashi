@@ -5,10 +5,10 @@
 -- Creates tables, RLS policies, the screenshots storage bucket, and the
 -- trigger that auto-creates a profile when a user signs up.
 --
--- Auth model: phone + password. We never send SMS (not free). The app maps a
--- phone number to a synthetic email (<digits>@fe.local) and uses Supabase's
--- free email/password auth under the hood. The phone is the login; the
--- display name is what other players see.
+-- Auth model: email + password with email verification. Supabase sends a
+-- confirmation link on sign-up; users can't sign in until they click it. This
+-- keeps people from spinning up accounts with fake addresses. The email is the
+-- login; the display name is what other players see.
 -- ============================================================================
 
 create extension if not exists pgcrypto;
@@ -40,13 +40,13 @@ drop type if exists public.league_status cascade;
 create table if not exists public.profiles (
     id           uuid primary key references auth.users(id) on delete cascade,
     display_name text not null,
-    phone        text,                         -- private, never shown publicly
+    email        text,                         -- private, never shown publicly
     is_admin     boolean not null default false,
     created_at   timestamptz not null default now()
 );
 
--- Create a profile row automatically on signup, pulling name/phone from the
--- user metadata the sign-up server action sets.
+-- Create a profile row automatically on signup, pulling the name from the user
+-- metadata the sign-up server action sets and the email from the auth record.
 create or replace function public.handle_new_user()
 returns trigger
 language plpgsql
@@ -54,11 +54,11 @@ security definer
 set search_path = public
 as $$
 begin
-    insert into public.profiles (id, display_name, phone)
+    insert into public.profiles (id, display_name, email)
     values (
         new.id,
         coalesce(new.raw_user_meta_data ->> 'display_name', 'Player'),
-        new.raw_user_meta_data ->> 'phone'
+        new.email
     )
     on conflict (id) do nothing;
     return new;
@@ -127,9 +127,13 @@ create index if not exists idx_matches_players on public.matches(player_a, playe
 
 -- ----------------------------------------------------------------------------
 -- submissions (per player, per match) — competed categories
---   Score = (Social - WhatsApp) + Games + Entertainment + Creativity.
---   Messages and FaceTime are not in these categories, so they're excluded
---   automatically. WhatsApp lives inside iOS "Social", so we subtract it.
+--   Score = Social + Games + Entertainment + Creativity + Health & Fitness
+--           + Utilities + Shopping & Food + Other  (in minutes).
+--   Social now counts every social app (WhatsApp & Messages included — nothing
+--   is subtracted). The excluded iOS categories — Productivity & Finance,
+--   Education, Information & Reading, and Travel — simply aren't recorded.
+--   A player who never submits before the window closes is marked no_show and
+--   scored as a full 24 hours (1440 min), the worst possible total.
 -- ----------------------------------------------------------------------------
 create type submission_source as enum ('ocr', 'manual', 'mixed');
 
@@ -141,10 +145,16 @@ create table if not exists public.submissions (
     games_min           int not null default 0 check (games_min between 0 and 1440),
     entertainment_min   int not null default 0 check (entertainment_min between 0 and 1440),
     creativity_min      int not null default 0 check (creativity_min between 0 and 1440),
-    whatsapp_min        int not null default 0 check (whatsapp_min between 0 and 1440),
+    health_fitness_min  int not null default 0 check (health_fitness_min between 0 and 1440),
+    utilities_min       int not null default 0 check (utilities_min between 0 and 1440),
+    shopping_food_min   int not null default 0 check (shopping_food_min between 0 and 1440),
+    other_min           int not null default 0 check (other_min between 0 and 1440),
+    no_show             boolean not null default false,
     total_min           int generated always as (
-                            greatest(social_min - whatsapp_min, 0)
-                            + games_min + entertainment_min + creativity_min
+                            case when no_show then 1440 else
+                                social_min + games_min + entertainment_min + creativity_min
+                                + health_fitness_min + utilities_min + shopping_food_min + other_min
+                            end
                         ) stored,
     screenshot_path     text,
     source              submission_source not null default 'manual',

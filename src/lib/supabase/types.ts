@@ -11,7 +11,7 @@ export type SubmissionSource = "ocr" | "manual" | "mixed";
 export type Profile = {
   id: string;
   display_name: string;
-  phone: string | null;
+  email: string | null;
   is_admin: boolean;
   created_at: string;
 };
@@ -55,7 +55,11 @@ export type Submission = {
   games_min: number;
   entertainment_min: number;
   creativity_min: number;
-  whatsapp_min: number;
+  health_fitness_min: number;
+  utilities_min: number;
+  shopping_food_min: number;
+  other_min: number;
+  no_show: boolean;
   total_min: number;
   screenshot_path: string | null;
   source: SubmissionSource;

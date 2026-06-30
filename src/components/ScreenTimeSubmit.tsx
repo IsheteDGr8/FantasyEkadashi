@@ -6,25 +6,24 @@ import { Upload, Loader2, Sparkles, ClipboardPaste } from "lucide-react";
 import { Button, Input, Label } from "@/components/ui";
 import { createClient } from "@/lib/supabase/client";
 import { submitScreenTime } from "@/server/actions/matches";
-import { CATEGORIES, computeTotal } from "@/lib/categories";
+import {
+  CATEGORIES,
+  computeTotal,
+  type CategoryField,
+  type CategoryMinutes,
+} from "@/lib/categories";
 import { formatMinutes, parseTimeToMinutes } from "@/lib/utils";
 
-interface ExistingSubmission {
-  social_min: number;
-  games_min: number;
-  entertainment_min: number;
-  creativity_min: number;
-  whatsapp_min: number;
+type ExistingSubmission = CategoryMinutes & {
   screenshot_path: string | null;
-}
-
-type Fields = {
-  social_min: string;
-  games_min: string;
-  entertainment_min: string;
-  creativity_min: string;
-  whatsapp_min: string;
 };
+
+type Fields = Record<CategoryField, string>;
+
+const EMPTY_FIELDS: Fields = CATEGORIES.reduce((acc, c) => {
+  acc[c.field] = "";
+  return acc;
+}, {} as Fields);
 
 function minutesToField(n: number): string {
   return n > 0 ? formatMinutes(n) : "";
@@ -96,12 +95,12 @@ export function ScreenTimeSubmit({
   const [file, setFile] = useState<File | null>(null);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const [ocrFound, setOcrFound] = useState(false);
-  const [fields, setFields] = useState<Fields>({
-    social_min: existing ? minutesToField(existing.social_min) : "",
-    games_min: existing ? minutesToField(existing.games_min) : "",
-    entertainment_min: existing ? minutesToField(existing.entertainment_min) : "",
-    creativity_min: existing ? minutesToField(existing.creativity_min) : "",
-    whatsapp_min: existing ? minutesToField(existing.whatsapp_min) : "",
+  const [fields, setFields] = useState<Fields>(() => {
+    if (!existing) return EMPTY_FIELDS;
+    return CATEGORIES.reduce((acc, c) => {
+      acc[c.field] = minutesToField(existing[c.field]);
+      return acc;
+    }, {} as Fields);
   });
   const [work, setWork] = useState<WorkState>("");
   const [error, setError] = useState<string | null>(null);
@@ -109,20 +108,11 @@ export function ScreenTimeSubmit({
   const inputRef = useRef<HTMLInputElement>(null);
   const previewRef = useRef<string | null>(null);
 
-  function parsed(): {
-    social_min: number;
-    games_min: number;
-    entertainment_min: number;
-    creativity_min: number;
-    whatsapp_min: number;
-  } {
-    return {
-      social_min: parseTimeToMinutes(fields.social_min) ?? 0,
-      games_min: parseTimeToMinutes(fields.games_min) ?? 0,
-      entertainment_min: parseTimeToMinutes(fields.entertainment_min) ?? 0,
-      creativity_min: parseTimeToMinutes(fields.creativity_min) ?? 0,
-      whatsapp_min: parseTimeToMinutes(fields.whatsapp_min) ?? 0,
-    };
+  function parsed(): CategoryMinutes {
+    return CATEGORIES.reduce((acc, c) => {
+      acc[c.field] = parseTimeToMinutes(fields[c.field]) ?? 0;
+      return acc;
+    }, {} as CategoryMinutes);
   }
 
   const onPick = useCallback(async (f: File | null) => {
@@ -192,9 +182,7 @@ export function ScreenTimeSubmit({
   function submit() {
     setError(null);
     const p = parsed();
-    if (
-      p.social_min + p.games_min + p.entertainment_min + p.creativity_min === 0
-    ) {
+    if (computeTotal(p) === 0) {
       setError("Enter at least one category time (e.g. '1h 20m', '45m', or '80').");
       return;
     }
@@ -218,11 +206,7 @@ export function ScreenTimeSubmit({
         const source = file ? (ocrFound ? "ocr" : "mixed") : "manual";
         const fd = new FormData();
         fd.set("matchId", matchId);
-        fd.set("social_min", String(p.social_min));
-        fd.set("games_min", String(p.games_min));
-        fd.set("entertainment_min", String(p.entertainment_min));
-        fd.set("creativity_min", String(p.creativity_min));
-        fd.set("whatsapp_min", String(p.whatsapp_min));
+        for (const c of CATEGORIES) fd.set(c.field, String(p[c.field]));
         if (screenshotPath) fd.set("screenshotPath", screenshotPath);
         fd.set("source", source);
         const result = await submitScreenTime(fd);
@@ -318,16 +302,13 @@ export function ScreenTimeSubmit({
       )}
 
       <div className="grid sm:grid-cols-2 gap-3">
-        {categoryInput("social_min", "Social")}
-        {categoryInput("games_min", "Games")}
-        {categoryInput("entertainment_min", "Entertainment")}
-        {categoryInput("creativity_min", "Creativity")}
+        {CATEGORIES.map((c) => categoryInput(c.field, c.label))}
       </div>
-      {categoryInput(
-        "whatsapp_min",
-        "WhatsApp & Messages (subtracted from Social)",
-        "Optional. iOS files these under Social — add your WhatsApp and Messages time together and we'll subtract the total.",
-      )}
+      <p className="text-xs text-muted">
+        Count every category except Productivity &amp; Finance, Education,
+        Information &amp; Reading, and Travel. Social includes WhatsApp &amp;
+        Messages — leave a category blank if it&apos;s zero.
+      </p>
 
       <div className="flex items-center justify-between rounded-xl bg-surface-2 border border-border px-4 py-3">
         <span className="text-sm text-muted">Your competed total</span>

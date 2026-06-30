@@ -69,7 +69,7 @@ export default function Home() {
         <div className="mt-8 grid sm:grid-cols-3 gap-4">
           {[
             { icon: Calendar, title: "An Ekadashi arrives", body: "Twice a month, the lunar calendar gives us an Ekadashi — a traditional day for restraint." },
-            { icon: Smartphone, title: "You log four categories", body: "Upload your iOS Screen Time \u201cShow Categories\u201d screenshot. OCR reads Social, Games, Entertainment, and Creativity (WhatsApp & Messages are subtracted)." },
+            { icon: Smartphone, title: "You log your categories", body: "Upload your iOS Screen Time \u201cShow Categories\u201d screenshot. Every category counts except Productivity & Finance, Education, Information & Reading, and Travel." },
             { icon: Trophy, title: "Lowest total wins", body: "Whoever spent less time across those categories advances. Last person standing wins the group." },
           ].map(({ icon: Icon, title, body }) => (
             <Card key={title}>

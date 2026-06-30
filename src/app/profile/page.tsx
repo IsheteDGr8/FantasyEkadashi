@@ -22,12 +22,12 @@ export default async function ProfilePage() {
               {profile.is_admin && <Badge variant="accent">admin</Badge>}
             </div>
             <p className="mt-1 text-sm text-muted">
-              Update your name or phone number.
+              Update the name other players see.
             </p>
           </div>
           <ProfileForm
             initialName={profile.display_name}
-            initialPhone={profile.phone ?? ""}
+            email={profile.email ?? ""}
           />
           <p className="text-sm text-center">
             <Link href="/dashboard" className="text-accent hover:underline">

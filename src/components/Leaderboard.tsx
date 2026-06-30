@@ -8,7 +8,9 @@ export interface LeaderboardRow {
   totalMin: number | null; // null = not submitted
   lost: boolean;
   isMe: boolean;
-  breakdown?: { social: number; games: number; entertainment: number; creativity: number; whatsapp: number };
+  noShow?: boolean;
+  /** Top contributing categories, biggest first. */
+  breakdown?: { label: string; min: number }[];
 }
 
 /**
@@ -32,7 +34,7 @@ export function Leaderboard({ rows, showBreakdown = false }: { rows: Leaderboard
             <th className="text-left font-medium px-3 py-2">Player</th>
             {showBreakdown && (
               <th className="text-right font-medium px-3 py-2 hidden sm:table-cell">
-                S / G / E / C
+                Top categories
               </th>
             )}
             <th className="text-right font-medium px-3 py-2">Total</th>
@@ -57,20 +59,25 @@ export function Leaderboard({ rows, showBreakdown = false }: { rows: Leaderboard
                   {row.lost && (
                     <Badge variant="danger" className="ml-2 align-middle">lost</Badge>
                   )}
+                  {row.noShow && (
+                    <Badge variant="muted" className="ml-2 align-middle">no-show</Badge>
+                  )}
                   {rank === 1 && !row.lost && (
                     <Badge variant="success" className="ml-2 align-middle">lowest</Badge>
                   )}
                 </td>
                 {showBreakdown && (
                   <td className="px-3 py-2 text-right text-muted font-mono text-xs hidden sm:table-cell">
-                    {row.breakdown
-                      ? `${row.breakdown.social}/${row.breakdown.games}/${row.breakdown.entertainment}/${row.breakdown.creativity}`
+                    {row.breakdown && row.breakdown.length > 0
+                      ? row.breakdown.map((b) => `${b.label} ${b.min}`).join(" · ")
                       : "—"}
                   </td>
                 )}
                 <td className="px-3 py-2 text-right font-mono tabular-nums">
                   {row.totalMin === null ? (
                     <span className="text-muted italic">no submission</span>
+                  ) : row.noShow ? (
+                    <span title="Did not submit — counted as 24h">{formatMinutes(row.totalMin)}</span>
                   ) : (
                     formatMinutes(row.totalMin)
                   )}
