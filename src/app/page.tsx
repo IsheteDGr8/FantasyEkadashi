@@ -1,14 +1,24 @@
 import Link from "next/link";
+import { redirect } from "next/navigation";
 import { Moon, Trophy, Smartphone, Calendar } from "lucide-react";
 import { getNextEkadashiInZone } from "@/lib/ekadashi";
 import { formatDate } from "@/lib/utils";
 import { Button, Card, CardBody } from "@/components/ui";
 import { CountdownToEkadashi } from "@/components/CountdownToEkadashi";
 import { MoonPhase } from "@/components/MoonPhase";
+import { createClient } from "@/lib/supabase/server";
+import { supabaseConfigured } from "@/components/SetupRequired";
 
 const DISPLAY_TZ = "America/Los_Angeles";
 
-export default function Home() {
+export default async function Home() {
+  // Signed-in users get their app home (the dashboard), not the marketing page.
+  if (supabaseConfigured()) {
+    const supabase = await createClient();
+    const { data } = await supabase.auth.getUser();
+    if (data.user) redirect("/dashboard");
+  }
+
   const next = getNextEkadashiInZone(new Date(), "Asia/Kolkata", DISPLAY_TZ);
 
   return (

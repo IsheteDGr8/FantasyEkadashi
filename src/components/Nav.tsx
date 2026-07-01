@@ -18,7 +18,7 @@ export async function Nav() {
   return (
     <header className="sticky top-0 z-30 border-b border-border/60 bg-background/70 backdrop-blur-xl">
       <div className="mx-auto flex max-w-5xl items-center justify-between gap-2 px-3 py-2.5 sm:px-6 sm:py-3">
-        <Link href="/" className="group flex min-w-0 items-center gap-2">
+        <Link href={signedIn ? "/dashboard" : "/"} className="group flex min-w-0 items-center gap-2">
           <span className="grid h-9 w-9 shrink-0 place-items-center rounded-full bg-gradient-to-br from-accent to-accent-2 text-accent-foreground shadow-md shadow-accent/20 transition group-hover:scale-105">
             <Moon size={18} strokeWidth={2.5} />
           </span>
